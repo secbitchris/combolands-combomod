@@ -1,0 +1,7 @@
+# build output
+bin/
+obj/
+
+# local deploy artefacts
+*.user
+.vs/
