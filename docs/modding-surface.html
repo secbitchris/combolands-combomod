@@ -1,0 +1,790 @@
+<title>Combolands Modding Surface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --ground:      #F5F7F7;
+    --surface:     #FFFFFF;
+    --surface-alt: #EDF1F0;
+    --ink:         #16201F;
+    --ink-soft:    #55625F;
+    --ink-faint:   #7C8987;
+    --rule:        #DBE3E1;
+    --rule-strong: #C2CECB;
+    --accent:      #0E6E62;
+    --accent-soft: #DCEDEA;
+    --safe:        #3F7A46;
+    --safe-soft:   #E2EFE3;
+    --guard:       #9A6B15;
+    --guard-soft:  #F5EBD6;
+    --unsafe:      #A63D33;
+    --unsafe-soft: #F6E3E0;
+
+    --measure: 68ch;
+    --step--1: 0.815rem;
+    --step-0:  1.0rem;
+    --step-1:  1.25rem;
+    --step-2:  1.6rem;
+    --step-3:  2.1rem;
+    --step-4:  2.9rem;
+
+    --sans: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:      #101614;
+      --surface:     #18201E;
+      --surface-alt: #1E2725;
+      --ink:         #E4EAE7;
+      --ink-soft:    #99A8A3;
+      --ink-faint:   #74827E;
+      --rule:        #2A3532;
+      --rule-strong: #3A4744;
+      --accent:      #45C5B1;
+      --accent-soft: #16302C;
+      --safe:        #7BC083;
+      --safe-soft:   #17291A;
+      --guard:       #DFAC4C;
+      --guard-soft:  #2C2314;
+      --unsafe:      #E8806F;
+      --unsafe-soft: #2E1B18;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground:      #101614;
+    --surface:     #18201E;
+    --surface-alt: #1E2725;
+    --ink:         #E4EAE7;
+    --ink-soft:    #99A8A3;
+    --ink-faint:   #74827E;
+    --rule:        #2A3532;
+    --rule-strong: #3A4744;
+    --accent:      #45C5B1;
+    --accent-soft: #16302C;
+    --safe:        #7BC083;
+    --safe-soft:   #17291A;
+    --guard:       #DFAC4C;
+    --guard-soft:  #2C2314;
+    --unsafe:      #E8806F;
+    --unsafe-soft: #2E1B18;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: var(--step-0);
+    line-height: 1.62;
+    margin: 0;
+    padding: 0 1.5rem 6rem;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 78rem;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  /* ---------- masthead ---------- */
+
+  .masthead {
+    padding: 4.5rem 0 2rem;
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 1.25rem;
+  }
+
+  h1 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: var(--step-4);
+    line-height: 1.03;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+    margin: 0 0 1rem;
+    max-width: 20ch;
+  }
+
+  .standfirst {
+    font-size: var(--step-1);
+    line-height: 1.5;
+    color: var(--ink-soft);
+    max-width: var(--measure);
+    margin: 0;
+  }
+
+  /* ---------- build metadata strip ---------- */
+
+  .meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 3.5rem;
+  }
+
+  .meta div {
+    padding: 1.1rem 1.25rem 1.1rem 0;
+    border-right: 1px solid var(--rule);
+  }
+
+  .meta div:last-child { border-right: none; }
+
+  .meta dt {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0 0 0.35rem;
+  }
+
+  .meta dd {
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    color: var(--ink);
+    margin: 0;
+    word-break: break-all;
+  }
+
+  /* ---------- sections ---------- */
+
+  section { margin-bottom: 4rem; }
+
+  h2 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: var(--step-3);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    margin: 0 0 0.75rem;
+    max-width: 26ch;
+  }
+
+  h3 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: var(--step-1);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 2.5rem 0 0.6rem;
+  }
+
+  p, ul, ol { max-width: var(--measure); }
+  p { margin: 0 0 1.1rem; }
+  ul, ol { margin: 0 0 1.1rem; padding-left: 1.2rem; }
+  li { margin-bottom: 0.5rem; }
+
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--surface-alt);
+    padding: 0.12em 0.36em;
+    border-radius: 3px;
+  }
+
+  strong { font-weight: 600; }
+
+  .lede {
+    font-size: var(--step-1);
+    line-height: 1.5;
+    color: var(--ink);
+    border-left: 3px solid var(--accent);
+    padding-left: 1.25rem;
+    max-width: var(--measure);
+    margin: 0 0 2rem;
+  }
+
+  /* ---------- tier blocks ---------- */
+
+  .tier {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-left: 5px solid var(--tier-color);
+    padding: 1.75rem 1.75rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .tier-1 { --tier-color: var(--safe);   --tier-wash: var(--safe-soft); }
+  .tier-2 { --tier-color: var(--guard);  --tier-wash: var(--guard-soft); }
+  .tier-3 { --tier-color: var(--unsafe); --tier-wash: var(--unsafe-soft); }
+
+  .tier-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+
+  .tier-num {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--tier-color);
+    background: var(--tier-wash);
+    padding: 0.28rem 0.6rem;
+    border-radius: 2px;
+    white-space: nowrap;
+  }
+
+  .tier-head h3 {
+    margin: 0;
+    font-size: var(--step-2);
+  }
+
+  .tier p:last-child, .tier ul:last-child { margin-bottom: 0; }
+
+  /* ---------- tables ---------- */
+
+  .table-scroll {
+    overflow-x: auto;
+    margin: 0 0 1.25rem;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.45;
+  }
+
+  caption {
+    text-align: left;
+    font-family: var(--sans);
+    font-size: var(--step--1);
+    font-weight: 500;
+    color: var(--ink-soft);
+    padding: 0 0 0.6rem;
+    max-width: var(--measure);
+  }
+
+  th, td {
+    padding: 0.6rem 0.9rem;
+    text-align: left;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  th {
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--rule-strong);
+    position: sticky;
+    top: 0;
+  }
+
+  tbody tr:last-child td { border-bottom: none; }
+
+  td.wrap-cell { white-space: normal; min-width: 20rem; font-family: var(--serif); font-size: 0.95rem; }
+  td.num { text-align: right; }
+  .neg { color: var(--unsafe); }
+  .pill-safe   { color: var(--safe); }
+  .pill-guard  { color: var(--guard); }
+  .pill-unsafe { color: var(--unsafe); }
+
+  /* ---------- callout ---------- */
+
+  .callout {
+    background: var(--guard-soft);
+    border: 1px solid var(--guard);
+    padding: 1.4rem 1.6rem;
+    margin: 0 0 1.5rem;
+    max-width: var(--measure);
+  }
+
+  .callout h3 {
+    margin: 0 0 0.5rem;
+    font-size: var(--step-1);
+    color: var(--guard);
+  }
+
+  .callout p:last-child { margin-bottom: 0; }
+
+  pre {
+    background: var(--surface-alt);
+    border: 1px solid var(--rule);
+    padding: 1rem 1.15rem;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: var(--step--1);
+    line-height: 1.55;
+    margin: 0 0 1.25rem;
+    max-width: var(--measure);
+  }
+
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  /* ---------- verified footer ---------- */
+
+  .verified {
+    border-top: 2px solid var(--ink);
+    padding-top: 2rem;
+    margin-top: 4rem;
+  }
+
+  .verified-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .verified-item {
+    border-top: 3px solid var(--safe);
+    padding-top: 0.8rem;
+  }
+
+  .verified-item .k {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .verified-item .v {
+    font-family: var(--sans);
+    font-size: var(--step-0);
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  @media (max-width: 40rem) {
+    :root { --step-4: 2.1rem; --step-3: 1.6rem; --step-2: 1.3rem; }
+    body { padding: 0 1rem 4rem; }
+    .meta div { border-right: none; border-bottom: 1px solid var(--rule); }
+    .meta div:last-child { border-bottom: none; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="masthead">
+    <p class="eyebrow">Mod safety audit · Combolands</p>
+    <h1>Combolands Modding Surface</h1>
+    <p class="standfirst">
+      What can be changed, by how much, and exactly where the save format stops forgiving you.
+      Every range below was measured from the shipped build, not estimated.
+    </p>
+  </header>
+
+  <dl class="meta">
+    <div>
+      <dt>Steam appid</dt>
+      <dd>4075620</dd>
+    </div>
+    <div>
+      <dt>Build</dt>
+      <dd>24951781</dd>
+    </div>
+    <div>
+      <dt>Engine</dt>
+      <dd>Unity 6000.0.66f2 · Mono</dd>
+    </div>
+    <div>
+      <dt>Assembly-CSharp SHA-256</dt>
+      <dd>eff64c97…8c2188a8</dd>
+    </div>
+    <div>
+      <dt>Audited</dt>
+      <dd>2026-08-26 (re-verified after patch)</dd>
+    </div>
+  </dl>
+
+  <section>
+    <h2>The safety boundary is one question</h2>
+    <p class="lede">
+      Does the change write a value into a save file that an unmodded client cannot resolve?
+      Everything else is noise.
+    </p>
+    <p>
+      Combolands writes two save files, both <code>JsonUtility</code> JSON, gzipped and
+      base64-encoded. The decisive detail is that the run save stores per-piece
+      <em>deltas only</em> — <code>LocalRangeChanges</code>, <code>LocalMultChanges</code>,
+      <code>Count</code>, <code>StoredValue</code>. No base stat is serialized anywhere. Base
+      values are re-read from code on every load, which is why rebalancing is invisible to the
+      save format in both directions.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>File</th><th>Holds</th><th>Lifetime</th><th>Blast radius</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>GameState.save</td>
+            <td class="wrap-cell">Map, tiles, per-piece GameTag, run counters, guilds, council, quest</td>
+            <td>Current run</td>
+            <td class="wrap-cell">Delete the file</td>
+          </tr>
+          <tr>
+            <td>Unlocks.save</td>
+            <td class="wrap-cell">UnlockedBuildings, AchievedBuildings, victories, lifetime stats, tutorials</td>
+            <td class="pill-unsafe">Permanent</td>
+            <td class="wrap-cell">No validation on load — unknown tags enter the list silently and fail later</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Three tiers of change</h2>
+
+    <div class="tier tier-1">
+      <div class="tier-head">
+        <span class="tier-num">Tier 1 · free</span>
+        <h3>Cannot touch a save</h3>
+      </div>
+      <p>
+        Reversible by deleting the mod. A save written while it was loaded opens fine in an
+        unmodded client.
+      </p>
+      <ul>
+        <li>Rebalancing any existing building or item — every knob in the table below</li>
+        <li>Rewriting behaviour logic for existing tags</li>
+        <li>All text, sprites, audio, VFX, UI</li>
+        <li>Draft-pool composition and weights among existing tags</li>
+        <li>Map size and tile layout (Width/Height serialize as plain integers)</li>
+        <li>The three declared-but-unused enum members</li>
+      </ul>
+      <p>
+        Two facts underwrite this. There is <strong>zero</strong> <code>AssetDatabase</code> /
+        <code>SetDirty</code> / <code>SaveAssets</code> in the build, so runtime ScriptableObject
+        edits physically cannot reach disk. And balance lives in code, not data — behaviour
+        constructors call <code>SetRarity</code>, <code>SetBehaviourCooldownParam</code> and
+        friends.
+      </p>
+    </div>
+
+    <div class="tier tier-2">
+      <div class="tier-head">
+        <span class="tier-num">Tier 2 · guard it</span>
+        <h3>Writes plain integers</h3>
+      </div>
+      <ul>
+        <li>
+          Modifying the serialized deltas themselves. These carry no identity meaning, so vanilla
+          reads them fine — a building left with +5 range is a balance oddity, not corruption.
+        </li>
+        <li>
+          Winning a run with mods active. This records victories in <code>Unlocks.save</code> and
+          fires <code>EvaluateAchievements()</code>.
+        </li>
+      </ul>
+      <p>
+        The guard is one line: <code>AchievementsHandler.achievementPlatform</code> is a
+        <strong>public field</strong> of type <code>IAchievementPlatform</code>. Assign a no-op
+        implementation and Steam sees nothing. The handler enables itself in
+        <code>Start()</code>, so the swap has to happen after that.
+      </p>
+    </div>
+
+    <div class="tier tier-3">
+      <div class="tier-head">
+        <span class="tier-num">Tier 3 · needs a framework</span>
+        <h3>Mints new enum values</h3>
+      </div>
+      <p>
+        <code>JsonUtility</code> writes enums as bare integers. A modded
+        <code>(GameTag)1001</code> serializes as <code>1001</code>, and a vanilla load resolves it
+        to a tag with no data behind it.
+      </p>
+      <ul>
+        <li>New buildings, items, consumables, heirlooms, gems, tomes</li>
+        <li>New GamePieceCategory, TargetCategory, TileType, ThemeType, CouncilCharacter, GameMechanicUnlock, ProgressionRank</li>
+      </ul>
+      <p>
+        Doing this properly needs a stable tag allocator, postfixes on roughly 13
+        <code>Enum.GetValues(typeof(GameTag))</code> call sites, sidecar save manifests, and a
+        load-failure guard around <code>IOManager.LoadFile</code> — which currently has no
+        try/catch at all.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>The knob inventory</h2>
+    <p>
+      Every tunable on <code>_GamePieceBehaviour</code>, measured across all 320 shipped behaviour
+      classes. <strong>n</strong> is how many buildings or items set it; the range is what vanilla
+      content actually uses. Negatives are legitimate — penalty buildings exist.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <caption>Measured across 320 behaviour classes. Re-verified unchanged across the 2026-08-26 patch.</caption>
+        <thead>
+          <tr>
+            <th>Knob</th><th>Type</th><th class="num">n</th><th class="num">min</th>
+            <th class="num">max</th><th class="num">median</th><th>Values in use</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>BehaviourCooldownParam</td><td>int</td><td class="num">75</td><td class="num">2</td><td class="num">15</td><td class="num">4</td><td>2,3,4,5,6,7,8,10,15</td></tr>
+          <tr><td>BehaviourRange</td><td>int</td><td class="num">75</td><td class="num">2</td><td class="num">8</td><td class="num">4</td><td>2–8 contiguous</td></tr>
+          <tr><td>BuyPrice</td><td>int</td><td class="num">63</td><td class="num">4</td><td class="num">200</td><td class="num">6</td><td>4–12, 16, 200</td></tr>
+          <tr><td>ActivationCount</td><td>int</td><td class="num">46</td><td class="num">1</td><td class="num">5</td><td class="num">1</td><td>1–5</td></tr>
+          <tr><td>MultParam</td><td>float</td><td class="num">39</td><td class="num neg">−3</td><td class="num">7</td><td class="num">0.5</td><td>−3, 0.1…1, 3, 7</td></tr>
+          <tr><td>MoneyParam</td><td>int</td><td class="num">28</td><td class="num">1</td><td class="num">100</td><td class="num">1</td><td>1,2,4,5,10,15,100</td></tr>
+          <tr><td>BehaviourScoreParam</td><td>int</td><td class="num">19</td><td class="num neg">−150</td><td class="num">250</td><td class="num">1</td><td>−150,−100,−2,1,10,30,40,50,70,250</td></tr>
+          <tr><td>ActivationChance</td><td>float</td><td class="num">13</td><td class="num">0.1</td><td class="num">2.0</td><td class="num">0.25</td><td>0.1,0.2,0.25,0.3,0.5,2</td></tr>
+          <tr><td>RerollsCountParam</td><td>int</td><td class="num">13</td><td class="num">1</td><td class="num">5</td><td class="num">1</td><td>1,2,5</td></tr>
+          <tr><td>PlacementCount</td><td>int</td><td class="num">11</td><td class="num">2</td><td class="num">9</td><td class="num">3</td><td>2,3,4,5,6,9</td></tr>
+          <tr><td>TimesCanTriggerPerWeek</td><td>int</td><td class="num">8</td><td class="num">1</td><td class="num">3</td><td class="num">1</td><td>1,3</td></tr>
+          <tr><td>RemovesCountParam</td><td>int</td><td class="num">7</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td>1</td></tr>
+          <tr><td>CooldownModificationParam</td><td>int</td><td class="num">5</td><td class="num">1</td><td class="num">3</td><td class="num">1</td><td>1,2,3</td></tr>
+          <tr><td>RangeModificationParam</td><td>int</td><td class="num">5</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td>1</td></tr>
+          <tr><td>EnchantParam</td><td>int</td><td class="num">2</td><td class="num">1</td><td class="num">2</td><td class="num">—</td><td>1,2</td></tr>
+          <tr><td>StoredValueParam</td><td>int</td><td class="num">1</td><td class="num">1</td><td class="num">1</td><td class="num">—</td><td>1</td></tr>
+          <tr><td>RollChanceMultiplier</td><td>float</td><td class="num">44</td><td class="num">—</td><td class="num">—</td><td class="num">1.0</td><td>per-building override</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>What actually constrains you</h3>
+    <p>
+      Every setter is a bare field assignment — <strong>there is no validation anywhere</strong>.
+      The real constraints are downstream, and there are remarkably few.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Constraint</th><th>Where</th><th>Effect</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Mathf.Max(cooldown + delta, 1)</td>
+            <td>GamePieceLocalValues:218</td>
+            <td class="wrap-cell"><strong>The only hard clamp in the stat system.</strong> Cooldown floors at 1.</td>
+          </tr>
+          <tr>
+            <td>Range = base + delta</td>
+            <td>GamePieceLocalValues:108</td>
+            <td class="wrap-cell">Unclamped. Negative and huge both accepted.</td>
+          </tr>
+          <tr>
+            <td>ActivationCount = base + delta</td>
+            <td>GamePieceLocalValues:124</td>
+            <td class="wrap-cell">Unclamped.</td>
+          </tr>
+          <tr>
+            <td>Multiplier = base + delta</td>
+            <td>GamePieceLocalValues:143</td>
+            <td class="wrap-cell">Unclamped float.</td>
+          </tr>
+          <tr>
+            <td>Clamp(citySize − 1, 0, 10)</td>
+            <td>RarityLookup</td>
+            <td class="wrap-cell">Rarity scaling caps at city size 10.</td>
+          </tr>
+          <tr>
+            <td>Score stored as long</td>
+            <td>ScoreController:36</td>
+            <td class="wrap-cell">No realistic overflow.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Range has no numeric ceiling but a practical one: <code>BuildingController</code> maintains a
+      precomputed tile-to-buildings index, so cost is paid on rebuild rather than per query. On a
+      board this size, range 8 already reaches most tiles, so anything past ~12 is
+      gameplay-meaningless before it is ever a performance problem.
+    </p>
+
+    <div class="callout">
+      <h3>Never set a draft weight to exactly zero</h3>
+      <p>
+        <code>ChooseBag.RemoveElement</code> only removes entries whose weight is greater than 0.
+        An entry at exactly 0 can still be chosen but never removed, so <code>GetRoll</code> picks
+        it repeatedly — and because results collect into a <code>HashSet</code>, the caller
+        silently receives <em>fewer draft options than it asked for</em>. Use a small epsilon
+        instead; it keeps the entry removable while making it effectively unreachable.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Global economy knobs</h2>
+    <p>
+      These are <code>static</code> classes with hardcoded switch expressions — no data files.
+      Each is a single Harmony patch.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Table</th><th>Common</th><th>Uncommon</th><th>Rare</th><th>Masterwork</th><th>Legendary</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Building roll weight</td><td>0.70</td><td>0.24</td><td>0.05</td><td>0.01</td><td class="pill-unsafe">0.00</td></tr>
+          <tr><td>Item roll weight</td><td>0.60</td><td>0.30</td><td>0.10</td><td>—</td><td class="pill-unsafe">0.00</td></tr>
+          <tr><td>Drift per city size</td><td>−3%</td><td>+5%</td><td>+15%</td><td>+15%</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <strong>Legendary rolls at 0.0.</strong> It falls through to the default case in both tables,
+      so the three buildings tagged Legendary can never be drafted and must be granted another
+      way. Giving Legendary a nonzero weight is a one-line change with immediate, dramatic effect.
+    </p>
+
+    <h3>Shop composition</h3>
+    <p>
+      Relative weights into a normalized bag: Heirloom <strong>20</strong>, Favour
+      <strong>6</strong>, Blueprint <strong>4</strong>, BuildingSupply <strong>4</strong>, Spell
+      <strong>2</strong>. Blueprint price is a flat <strong>4</strong> regardless of building or
+      milestone. Sell price is <code>floor(buy / 2)</code>.
+    </p>
+  </section>
+
+  <section>
+    <h2>Enum headroom</h2>
+    <p>
+      Every enum member checked for references anywhere in the codebase. The three orphans are
+      already declared, so vanilla deserializes them without complaint — they are new-content
+      surface that costs no framework at all.
+    </p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>Enum</th><th class="num">Members</th><th>Never referenced</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GameTag</td><td class="num">359</td><td>— (plus 1001+ free, classified as buildings)</td></tr>
+          <tr><td>GamePieceCategory</td><td class="num">47</td><td class="pill-safe">Masonry</td></tr>
+          <tr><td>TriggerType</td><td class="num">23</td><td class="pill-safe">BuildingUpgradeUsed, RemoveGained</td></tr>
+          <tr><td>TileType</td><td class="num">5</td><td>0</td></tr>
+          <tr><td>Rarity</td><td class="num">6</td><td>0 (Legendary never rolls)</td></tr>
+          <tr><td>GameMechanicUnlock</td><td class="num">17</td><td>0</td></tr>
+          <tr><td>ProgressionRank</td><td class="num">12</td><td>0</td></tr>
+          <tr><td>Achievement</td><td class="num">21</td><td>0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      <code>IsBuildingTag()</code> reserves everything above 1000, and the highest declared value
+      is 916. So <code>(GameTag)1001+</code> is an unclaimed range that already routes as a
+      building — as close to a sanctioned extension point as the codebase offers. The catch is
+      that 13 call sites enumerate via <code>Enum.GetValues</code>, which returns declared members
+      only, so a custom tag is correctly classified and simultaneously invisible.
+    </p>
+  </section>
+
+  <section>
+    <h2>The trap that wastes an hour</h2>
+    <p>
+      Range, multiplier, and cooldown are <strong>cached per piece</strong> behind sentinel values
+      (<code>-9999</code>, <code>-9998f</code>). Change a base stat at runtime and buildings
+      already on the map keep serving stale numbers.
+    </p>
+    <p>
+      The fix is public: <code>BuildingExtensions.ResetCaches()</code> walks every placed building
+      and clears its cache, and guards internally on whether a controller exists, so it is safe to
+      call from the main menu.
+    </p>
+    <pre><code>ComboModApi.InvalidateStatCaches();   // wraps BuildingExtensions.ResetCaches()</code></pre>
+    <p>
+      Without it a rebalance appears to work on newly placed buildings and silently no-ops on
+      everything already standing — the two states look identical from inside the game.
+    </p>
+  </section>
+
+  <section>
+    <h2>What the environment takes off the table</h2>
+    <p>
+      Checked for, and absent: <strong>no anti-tamper, no checksums, no integrity verification.
+      No leaderboards, no telemetry, no analytics, no network calls</strong> beyond
+      <code>Application.OpenURL</code> to the Steam page, Discord, and the developer's site. Fully
+      offline single-player.
+    </p>
+    <p>
+      There is also <strong>no RNG seeding anywhere</strong> — no <code>Random.InitState</code>, no
+      seeded runs. Nothing to desync, and no reproducibility contract to break.
+    </p>
+    <p>
+      So there is no ban risk, no shared scoreboard to pollute, and no external state to corrupt.
+      The only thing a mod can damage is your own two save files.
+    </p>
+  </section>
+
+  <footer class="verified">
+    <h2>Verified against the running game</h2>
+    <p>
+      ComboMod implements the Tier 1 surface and was confirmed live: version gate matched, tunes
+      applied exactly once each, real before/after values logged. When the game patched from
+      24930533 to 24951781 mid-session the gate caught it immediately — and re-auditing the new
+      binary found every knob, value, and reflected field unchanged. That patch only added a
+      Compendium screen.
+    </p>
+    <pre><code>[Info :ComboMod Core] Game assembly matches the audited build (24930533).
+[Info :ComboMod Core]   Bakery.cooldownParam: 5 -&gt; 3
+[Info :ComboMod Core]   Bakery.moneyCountParam: 0 -&gt; 5
+[Info :ComboMod Core]   Windmill.rollChanceMultiplier: 1 -&gt; 3
+[Info :ComboMod Core]   Blacksmith.rarity: Rare -&gt; Common
+[Info :ComboMod Core] Achievement guard engaged.</code></pre>
+
+    <div class="verified-grid">
+      <div class="verified-item">
+        <span class="k">Tier 1 cost</span>
+        <span class="v">One Harmony postfix per behaviour map, plus a cache reset</span>
+      </div>
+      <div class="verified-item">
+        <span class="k">Save impact</span>
+        <span class="v">None — base stats are never serialized</span>
+      </div>
+      <div class="verified-item">
+        <span class="k">Enforcement</span>
+        <span class="v">Tune() rejects any tag outside the vanilla enum</span>
+      </div>
+      <div class="verified-item">
+        <span class="k">Uninstall</span>
+        <span class="v">Delete winhttp.dll and BepInEx/ — Steam integrity stays green</span>
+      </div>
+    </div>
+  </footer>
+
+</div>
