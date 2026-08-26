@@ -15,6 +15,11 @@ namespace ComboMod
     /// dictionaries on every scene load, so registered tunes are re-applied at exactly that
     /// point rather than once at startup.
     /// </para>
+    /// <para>
+    /// Headless by design: this assembly loads packs and applies tunes with no UI. The in-game
+    /// editor lives in ComboMod.Editor, so installing a balance pack does not force a cheat
+    /// panel on someone who only wanted the balance.
+    /// </para>
     /// </summary>
     [BepInPlugin(PluginGuid, PluginName, PluginVersion)]
     public sealed class Plugin : BaseUnityPlugin
@@ -27,9 +32,6 @@ namespace ComboMod
 
         private ConfigEntry<bool> _refuseOnVersionMismatch;
         private ConfigEntry<bool> _suppressAchievements;
-        private ConfigEntry<KeyCode> _panelKey;
-        private ConfigEntry<KeyCode> _abKey;
-        private ConfigEntry<float> _uiScale;
         private Harmony _harmony;
         private bool _guardPending;
 
@@ -55,49 +57,14 @@ namespace ComboMod
                 return;
             }
 
-            _panelKey = Config.Bind(
-                "UI", "PanelKey", KeyCode.F6,
-                "Key that opens the ComboMod panel, where tunes can be switched on and off live.");
-
-            _abKey = Config.Bind(
-                "UI", "AbToggleKey", KeyCode.F7,
-                "Key that flips every tune on or off at once, for comparing against vanilla.");
-
-            _uiScale = Config.Bind(
-                "UI", "Scale", 0f,
-                "Panel size multiplier. 0 means derive it from screen height, which is usually "
-                + "what you want: IMGUI draws at a fixed pixel size, so a panel sized for 1080p is "
-                + "unreadably small on 1440p or 4K. Any other value pins it. Adjustable in the "
-                + "panel, and changing it there writes the resolved number back here.");
-
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll(typeof(BehaviourInitPatches));
-
-            // Lives on the plugin's own GameObject, which BepInEx already keeps across scenes.
-            var panel = gameObject.AddComponent<ModPanel>();
-            panel.ToggleKey = _panelKey.Value;
-            panel.AbToggleKey = _abKey.Value;
-            // Leave 0 as-is: the panel resolves it on first paint, because Screen.height is not
-            // meaningful yet during chainloader startup.
-            panel.UiScale = _uiScale.Value > 0f
-                ? Mathf.Clamp(_uiScale.Value, ModPanel.MinScale, ModPanel.MaxScale)
-                : ModPanel.AutoScale;
-
-            Logger.LogInfo(_uiScale.Value > 0f
-                ? "Panel UI scale pinned to " + panel.UiScale.ToString("0.00")
-                : "Panel UI scale will be derived from screen height on first open.");
-
-            // Persist immediately so a scale chosen in game survives the next launch.
-            panel.OnScaleChanged = scale =>
-            {
-                _uiScale.Value = scale;
-                Config.Save();
-            };
 
             // After Harmony is in place, so the first apply happens through the normal path.
             PackLoader.LoadAll();
 
-            Logger.LogInfo(PluginName + " " + PluginVersion + " loaded. " + _panelKey.Value + " = panel, " + _abKey.Value + " = toggle all tunes.");
+            Logger.LogInfo(PluginName + " " + PluginVersion + " loaded. "
+                           + ComboModApi.Registrations.Count + " tune(s) registered.");
         }
 
         private void Update()

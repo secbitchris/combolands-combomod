@@ -208,7 +208,7 @@ namespace ComboMod
         }
 
         /// <summary>Read a field without going through a typed property. Used for change reporting.</summary>
-        internal static object ReadRaw(object behaviour, string field)
+        public static object ReadRaw(object behaviour, string field)
         {
             return ResolveOn(behaviour, field).GetValue(behaviour);
         }

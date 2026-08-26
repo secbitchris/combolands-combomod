@@ -34,8 +34,18 @@ forgiving.
 
 1. [BepInEx 5.4.23.3 (x64, Unity Mono)](https://github.com/BepInEx/BepInEx/releases) into the
    game folder.
-2. `ComboMod.Core.dll` into `BepInEx/plugins/ComboMod/`.
-3. Launch, press **F6**.
+2. Plugin DLLs into `BepInEx/plugins/ComboMod/`.
+3. Launch.
+
+Two plugins, installed separately:
+
+| | | |
+|---|---|---|
+| **ComboMod** | `ComboMod.Core.dll` | The framework. Loads balance packs, applies tunes, guards achievements. **No UI.** |
+| **ComboMod Editor** | `ComboMod.Editor.dll` | The in-game panel (**F6**). Optional, depends on Core. |
+
+They are separate so that installing a balance pack does not also hand you a money editor you
+never asked for. Remove the Editor and packs keep working exactly the same.
 
 **Uninstall:** delete `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version` and `BepInEx/`.
 Steam's file integrity check stays green — nothing in the game install is modified.
@@ -231,7 +241,8 @@ Two traps worth knowing:
 Requires the .NET SDK.
 
 ```bash
-dotnet build src/ComboMod.Core/ComboMod.Core.csproj -c Release
+dotnet build src/ComboMod.Editor/ComboMod.Editor.csproj -c Release   # builds Core too
+bash packaging/build-packages.sh                                     # Thunderstore zips
 ```
 
 `NuGet.config` adds the BepInEx feed (`BepInEx.Core` is not on nuget.org). Game assemblies are
@@ -244,13 +255,23 @@ Target framework is **netstandard2.1** — the game's assemblies require it and 
 
 ## Version gate
 
-ComboMod reflects on private field names, which are not API. `SafetyGate` hashes
-`Assembly-CSharp.dll` and compares against the audited build, warning on mismatch. Set
-`RefuseOnVersionMismatch` to refuse instead.
+ComboMod reflects on private field names, which are not API and can change in any patch.
+`SafetyGate` hashes `Assembly-CSharp.dll` against a list of known-good builds.
 
-A mismatch is usually harmless: when Combolands patched from build 24930533 to 24951781 during
+An unrecognised hash is only the first question. The second — and the one that decides whether
+the mod actually works — is whether every member ComboMod reflects on is still present, so on an
+unknown build it runs an **integrity check** and reports either *all N members present, should
+work normally* or exactly which ones are missing. "The build changed" and "the mod is broken" are
+very different statements, and a user deserves to be told which one they have.
+
+Set `RefuseOnVersionMismatch` to refuse loading instead of warning.
+
+A mismatch is usually harmless: when Combolands patched from 24930533 to 24951781 during
 development, re-auditing found every reflected field, both patched methods, and all balance data
-unchanged. Any field that genuinely moves is reported **by name** at tune time.
+unchanged.
+
+Packs and live edits degrade **per field** — a renamed stat costs that one stat and is reported by
+name. Code tunes cannot do this, because a lambda that throws mid-way cannot resume.
 
 Set the BepInEx log level to `Debug` for per-pass diagnostics — which behaviour instance was
 touched and whether vanilla was restored first. Useful because the game re-initialises behaviours

@@ -109,8 +109,23 @@ namespace ComboMod
                 TuneRegistration registration = ComboModApi.RegisterFromPack(
                     group.Key, isItem, pack.Name, tuner =>
                     {
+                        // Per-entry try/catch, not one around the loop: if the game renames a
+                        // field, that costs one stat rather than every stat on this piece.
+                        // Only possible because packs are data — a code tune is an opaque
+                        // lambda that cannot resume after throwing.
                         foreach (PackEntry entry in entries)
-                            tuner.SetByField(entry.Knob.Field, entry.Value);
+                        {
+                            try
+                            {
+                                tuner.SetByField(entry.Knob.Field, entry.Value);
+                            }
+                            catch (MissingFieldException)
+                            {
+                                ComboModApi.Log?.LogWarning(
+                                    "Pack '" + pack.Name + "' line " + entry.Line + ": " +
+                                    entry.Knob.Name + " no longer exists on this build; skipped.");
+                            }
+                        }
                     });
 
                 pack.Registrations.Add(registration);

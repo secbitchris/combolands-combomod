@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>ComboMod.Core</AssemblyName>
+    <AssemblyName>ComboMod.Editor</AssemblyName>
     <Version>0.1.0</Version>
     <LangVersion>latest</LangVersion>
     <!-- Unity's Mono profile has no nullable annotations; keep it plain. -->
@@ -39,6 +39,20 @@
       <HintPath>$(GameManaged)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- The panel is IMGUI (GUILayout/GUIStyle) keyed off legacy Input. Both live in their own
+         Unity modules rather than UnityEngine.dll. -->
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GameManaged)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(GameManaged)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GameManaged)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <!-- AchievementsHandler derives from SerializedMonoSingleton, which derives from Odin's
          SerializedMonoBehaviour. Touching the handler at all drags Sirenix in. -->
     <Reference Include="Sirenix.Serialization">
@@ -53,6 +67,12 @@
       <HintPath>$(GameManaged)\Sirenix.Utilities.dll</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ComboMod.Core\ComboMod.Core.csproj">
+      <Private>false</Private>
+    </ProjectReference>
   </ItemGroup>
 
 </Project>
