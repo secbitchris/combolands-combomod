@@ -119,7 +119,8 @@ namespace ComboMod
         private static readonly Dictionary<GameTag, Snapshot> BuildingSnapshots = new Dictionary<GameTag, Snapshot>();
         private static readonly Dictionary<GameTag, Snapshot> ItemSnapshots = new Dictionary<GameTag, Snapshot>();
 
-        internal static ManualLogSource Log;
+        /// <summary>Shared log sink. Public so companion assemblies can report through it.</summary>
+        public static ManualLogSource Log;
 
         /// <summary>Every registered tune, in registration order. Safe to enumerate from UI.</summary>
         public static IReadOnlyList<TuneRegistration> Registrations => Registry;
@@ -159,9 +160,24 @@ namespace ComboMod
                 GameTag captured = tag;
                 Registry.Add(new TuneRegistration(captured, LiveEditSource, isItem, TuneSourceKind.LiveEdit, tuner =>
                 {
-                    if (LiveEdits.TryGetValue(captured, out Dictionary<string, object> live))
-                        foreach (KeyValuePair<string, object> entry in live)
+                    if (!LiveEdits.TryGetValue(captured, out Dictionary<string, object> live))
+                        return;
+
+                    // Per-field, same reasoning as packs: one renamed field should not cost
+                    // every other edit on this piece.
+                    foreach (KeyValuePair<string, object> entry in live)
+                    {
+                        try
+                        {
                             tuner.SetByField(entry.Key, entry.Value);
+                        }
+                        catch (MissingFieldException)
+                        {
+                            Log?.LogWarning(
+                                "Live edit " + captured + "." + entry.Key.TrimStart('_') +
+                                " no longer exists on this build; skipped.");
+                        }
+                    }
                 }));
             }
 

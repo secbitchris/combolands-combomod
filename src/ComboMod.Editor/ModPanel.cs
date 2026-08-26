@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Entities;
+using ComboMod;
 using UnityEngine;
 
-namespace ComboMod
+namespace ComboMod.Editor
 {
     /// <summary>
     /// In-game editor. Two views: the tunes mods registered, and a browser over every building
@@ -14,7 +15,7 @@ namespace ComboMod
     /// build. A new-Input-System-only project would need a different approach.
     /// </para>
     /// </summary>
-    internal sealed class ModPanel : MonoBehaviour
+    public sealed class ModPanel : MonoBehaviour
     {
         private enum Tab { Tunes, Browse, Run, Packs }
 

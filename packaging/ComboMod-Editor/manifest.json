@@ -1,0 +1,9 @@
+{
+  "name": "ComboMod_Editor",
+  "version_number": "0.2.0",
+  "website_url": "",
+  "description": "In-game editor for ComboMod: browse and tune every stat live, give items, edit run values.",
+  "dependencies": [
+    "BepInEx-BepInExPack-5.4.2100"
+  ]
+}
