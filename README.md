@@ -91,6 +91,36 @@ Multiplier = 2
 Tune in game, then **Save as pack** to write your changes out. **Reload packs** picks up edits
 made in a text editor without restarting.
 
+### Global economy
+
+A pack can also reshape the run-wide economy through an `[economy]` section. These are Tier 1
+too — draft weights and prices are recomputed from code on every lookup, never serialized.
+
+```ini
+[economy]
+draft.legendary = 0.08     # vanilla 0.00 - Legendary can never be drafted
+draft.rare      = 0.12     # vanilla 0.05
+drift.rare      = 0.25     # vanilla 0.15 per city size
+shop.blueprint  = 20       # vanilla 4
+sellratio       = 0.75     # vanilla 0.5
+```
+
+| Key | Vanilla | |
+|---|---|---|
+| `draft.common` / `.uncommon` / `.rare` / `.masterwork` / `.legendary` | 0.70 / 0.24 / 0.05 / 0.01 / **0.00** | Building draft weight |
+| `item.common` / `.uncommon` / `.rare` | 0.60 / 0.30 / 0.10 | Item draft weight |
+| `drift.common` / `.uncommon` / `.rare` / `.masterwork` | −0.03 / +0.05 / +0.15 / +0.15 | Change per city size |
+| `shop.heirloom` / `.favour` / `.blueprint` / `.supply` / `.spell` | 20 / 6 / 4 / 4 / 2 | Shop card weights (relative) |
+| `blueprintprice` | 4 | Flat, ignores building and milestone |
+| `sellratio` | 0.5 | Fraction of buy price returned |
+
+**Legendary rolls at 0.00 in vanilla**, in both tables — it falls through to the default case, so
+the buildings tagged Legendary can never appear in a draft. One line makes them reachable.
+
+These live in `static` classes with hardcoded switch expressions, so there is no field to reflect
+on; they are Harmony prefixes that consult a table and fall through to the original whenever no
+override is set. An install with no economy pack behaves byte-identically to vanilla.
+
 ### Why not JSON
 
 Packs exist so that someone who does not write code can author and share one, and INI is
@@ -135,6 +165,18 @@ never falls.
 | Building | a **blueprint card**, stacking onto an existing one |
 
 Each row disables itself with a reason when it cannot work.
+
+**Manage** — what you are actually holding, with **Sell** and **Remove** per entry, slot counts
+against vanilla, and **Trim to vanilla**.
+
+This exists because ComboMod caused the problem it solves. The game has **no `RemoveSlot` at
+all**, and its inventory panels lay out for a handful of slots, so adding a dozen makes the
+normal UI unusable. Both `Slots` properties return the live backing list, so a slot can be
+removed by taking it out and destroying its GameObject.
+
+Only **empty** slots are removed, last first. Emptying a slot destroys an item, and that should
+be a deliberate choice rather than a side effect of trimming — so `Trim to vanilla` reports how
+many it actually managed.
 
 ### Scale
 

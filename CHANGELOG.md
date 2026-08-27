@@ -5,6 +5,12 @@
 Split into two plugins so a balance pack does not force a cheat panel on anyone.
 
 ### Added
+- **Global economy**: an `[economy]` pack section for draft weights, rarity drift,
+  shop composition, blueprint price and sell ratio. Makes Legendary draftable —
+  vanilla rolls it at 0.00 in both tables, so those buildings never appear.
+- **Manage tab**: see and clear what you are holding, and remove slots. The game
+  has no `RemoveSlot`, and its panels break past a handful of slots, so ComboMod
+  had to be able to undo what it let you add.
 - **Balance packs**: shareable plain-text `.pack` files in
   `BepInEx/config/ComboMod/packs/`. No compiler needed. A malformed line is
   skipped with its line number rather than failing the pack.
