@@ -8,3 +8,4 @@ obj/
 
 # built Thunderstore archives
 packaging/dist/
+install/plugins/

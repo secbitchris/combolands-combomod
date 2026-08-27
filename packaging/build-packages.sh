@@ -62,5 +62,18 @@ pack "ComboMod-Editor" "ComboMod-Editor" "$ROOT/src/ComboMod.Editor/bin/Release/
 pack "ComboMod-Cheats" "ComboMod-Cheats" "$ROOT/src/ComboMod.Cheats/bin/Release/ComboMod.Cheats.dll"
 
 echo
+# The installer bundle: everything a person needs, nothing they have to think about.
+INSTALLER="$DIST/ComboMod-installer"
+mkdir -p "$INSTALLER/plugins"
+cp "$ROOT/install/Install-ComboMod.ps1" "$ROOT/install/Uninstall-ComboMod.ps1" "$INSTALLER/"
+cp "$ROOT/install/Install ComboMod.bat" "$ROOT/install/Uninstall ComboMod.bat" "$INSTALLER/"
+cp "$ROOT/README.md" "$ROOT/CHANGELOG.md" "$ROOT/LICENSE" "$INSTALLER/"
+cp "$ROOT/src/ComboMod.Core/bin/Release/ComboMod.Core.dll" \
+   "$ROOT/src/ComboMod.Editor/bin/Release/ComboMod.Editor.dll" \
+   "$ROOT/src/ComboMod.Cheats/bin/Release/ComboMod.Cheats.dll" "$INSTALLER/plugins/"
+archive "$INSTALLER" "$DIST/ComboMod-installer.zip"
+rm -rf "$INSTALLER"
+echo "built $DIST/ComboMod-installer.zip  (double-click install, no mod manager needed)"
+echo
 echo "Note: SampleTweaks is a demo and is deliberately not packaged."
 echo "Icons come from tools/make-icons.py; rerun it after editing that script."
