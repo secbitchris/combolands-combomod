@@ -5,6 +5,13 @@
 Split into two plugins so a balance pack does not force a cheat panel on anyone.
 
 ### Added
+- **Fast map load**: the game rebuilds its whole spatial index once per building
+  placed, then rebuilds it again at the end of the load anyway. On a full board
+  that was 641 discarded rebuilds totalling ~33 seconds. Collapsed to one.
+  Load went from 33 seconds to instant.
+- **Profiler** (`Performance.Profile`, off by default): per-method call counts,
+  totals and worst-case timings, frame statistics, and GC correlation. Built
+  after two rounds of plausible-sounding reasoning produced two wrong answers.
 - **Global economy**: an `[economy]` pack section for draft weights, rarity drift,
   shop composition, blueprint price and sell ratio. Makes Legendary draftable —
   vanilla rolls it at 0.00 in both tables, so those buildings never appear.
@@ -25,6 +32,10 @@ Split into two plugins so a balance pack does not force a cheat panel on anyone.
   hash mismatch alone.
 
 ### Changed
+- **Harmony patching is failure-isolated**: each group is applied in a guard, so
+  a bad patch target costs that feature rather than silently disabling
+  everything after it in `Awake`. Found the hard way — an ambiguous overload in
+  one diagnostic probe took the whole plugin down with no error logged.
 - **Precedence is now explicit**: code → pack → live edit, later wins. It
   previously fell out of plugin load order, which let a shipped DLL silently
   override the user's own pack.
