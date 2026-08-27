@@ -377,6 +377,21 @@ game rebuilds wholesale. Triggers read the index during a cascade, so deferring 
 stale range data into scoring. The only lever there is board size, and the cost is superlinear in
 it.
 
+## Configuration
+
+One config file per plugin, under `BepInEx/config/`, written on first run.
+
+| Key | Plugin | Default | |
+|---|---|---|---|
+| `RefuseOnVersionMismatch` | Core | `false` | Refuse to load on an unrecognised game build rather than warning |
+| `SuppressAchievements` | Core | `true` | Stop modded runs unlocking Steam achievements |
+| `OptimiseScoring` | Core | `true` | The two provably-equivalent hot-path replacements |
+| `FastMapLoad` | Core | `true` | Collapse redundant index rebuilds during a map load |
+| `Profile` | Core | `false` | Frame and method timings logged every 5s. Diagnostic; leave off |
+| `PanelKey` | Editor | `F6` | Opens the panel |
+| `AbToggleKey` | Editor | `F7` | Flips every tune on and off, for A/B against vanilla |
+| `Scale` | Editor | `0` | Panel size. `0` derives it from screen height on first paint |
+
 ## What this has actually been tested on
 
 One person, one save, one machine. Verified against Combolands builds **24930533** and

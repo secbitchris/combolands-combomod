@@ -115,7 +115,7 @@ namespace ComboMod
             return true;
         }
 
-        /// <summary>How many members the integrity check looks for.</summary>
+        /// <summary>How many members have been checked, including companion assemblies'.</summary>
         public static int CheckedMemberCount { get; private set; }
 
         /// <summary>
@@ -142,15 +142,8 @@ namespace ComboMod
             if (!HasField(typeof(_GamePieceBehaviour), "_behaviourType"))
                 Missing.Add("_GamePieceBehaviour._behaviourType");
 
-            // Only Core's own surface. Run-state members moved to ComboMod.Cheats, which
-            // registers its own checks via AddCheck so the count reflects what is installed.
-            foreach (KeyValuePair<string, Func<bool>> extra in ExtraChecks)
-            {
-                checkedCount++;
-                if (!extra.Value())
-                    Missing.Add(extra.Key);
-            }
-
+            // Only Core's own surface here. Companion assemblies register and evaluate their
+            // own checks via AddCheck as they load, which is after this point.
             CheckedMemberCount = checkedCount;
         }
 
@@ -158,14 +151,42 @@ namespace ComboMod
             new Dictionary<string, Func<bool>>();
 
         /// <summary>
-        /// Let a companion assembly add its own reflected members to the integrity check, so the
-        /// report covers what is actually installed rather than what Core happens to know about.
-        /// Call before the gate runs, i.e. from a plugin's Awake.
+        /// Let a companion assembly add its own reflected members to the integrity check.
+        /// <para>
+        /// Evaluated immediately rather than stored for later. Core runs the gate during its own
+        /// Awake, and every companion assembly loads after that by definition -- it depends on
+        /// Core -- so anything merely queued here would never be checked at all. That was the
+        /// original bug: four run-state checks that looked registered and never once ran.
+        /// </para>
         /// </summary>
         public static void AddCheck(string description, Func<bool> present)
         {
-            if (!string.IsNullOrEmpty(description) && present != null)
-                ExtraChecks[description] = present;
+            if (string.IsNullOrEmpty(description) || present == null)
+                return;
+
+            if (ExtraChecks.ContainsKey(description))
+                return;
+
+            ExtraChecks[description] = present;
+            CheckedMemberCount++;
+
+            bool ok;
+            try
+            {
+                ok = present();
+            }
+            catch (Exception ex)
+            {
+                ComboModApi.Log?.LogWarning("Check '" + description + "' could not run: " + ex.Message);
+                return;
+            }
+
+            if (ok)
+                return;
+
+            Missing.Add(description);
+            ComboModApi.Log?.LogError("Integrity: " + description + " is missing on this build. "
+                                      + "Features using it will not work.");
         }
 
         /// <summary>True when a non-public or public instance field exists on the type or a base.</summary>

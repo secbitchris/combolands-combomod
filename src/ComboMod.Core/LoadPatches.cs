@@ -45,17 +45,20 @@ namespace ComboMod
         [HarmonyPatch(typeof(MapController), "InitializeGridFromSave")]
         internal static void LoadSavePre() => Begin();
 
-        [HarmonyPostfix]
+        // Finalizer, not postfix: a postfix is skipped when the original method throws, which
+        // would leave suppression latched on and silently disable every index rebuild for the
+        // rest of the session. A finalizer runs either way.
+        [HarmonyFinalizer]
         [HarmonyPatch(typeof(MapController), "InitializeGridFromSave")]
-        internal static void LoadSavePost() => End("save load");
+        internal static void LoadSaveDone() => End("save load");
 
         [HarmonyPrefix]
         [HarmonyPatch(typeof(MapController), "InitializeGridFromGeneratedMap")]
         internal static void NewMapPre() => Begin();
 
-        [HarmonyPostfix]
+        [HarmonyFinalizer]
         [HarmonyPatch(typeof(MapController), "InitializeGridFromGeneratedMap")]
-        internal static void NewMapPost() => End("map generation");
+        internal static void NewMapDone() => End("map generation");
 
         /// <summary>
         /// Skip the rebuild while populating. Returning false skips the original entirely; the
@@ -83,9 +86,11 @@ namespace ComboMod
 
         private static void End(string what)
         {
-            if (!Enabled || !_populating)
+            if (!_populating)
                 return;
 
+            // Cleared first and unconditionally. If anything below throws, suppression must
+            // still be off -- a stuck flag is far worse than a missed log line.
             _populating = false;
 
             // Do the one rebuild the whole load actually needed. Must happen after _populating
