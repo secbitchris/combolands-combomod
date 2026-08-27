@@ -5,6 +5,10 @@
 Split into two plugins so a balance pack does not force a cheat panel on anyone.
 
 ### Added
+- **Target selection**: `TargetCategories`, `TargetTags`, `TargetTileTypes` and
+  `TargetRarities` in a building's section change what it aims at, not just how
+  hard it hits. Names validated per kind.
+- **Category and trigger editing** in the panel, under **Sets**.
 - **Live edits persist** across restarts, written a couple of seconds after you
   stop typing and on quit, restored layered on top of packs. Previously an hour
   of tuning was lost on close unless you remembered Save as pack.

@@ -173,6 +173,16 @@ namespace ComboMod
                     configure: tuner => tuner.SetCanBePlacedOn(types)));
             }
 
+            // Target selection rides along as an extra registration per piece, like placement,
+            // so it participates in enable/disable and restore rather than being a side channel.
+            foreach (TargetSpec spec in pack.Targets)
+            {
+                TargetSpec captured = spec;
+                pack.Registrations.Add(ComboModApi.RegisterFromPack(
+                    captured.Tag, captured.IsItem, pack.Name,
+                    tuner => ApplyTarget(tuner, captured, pack)));
+            }
+
             LoadedPacks.Add(pack);
 
             string label = pack.Name + (pack.Version.Length > 0 ? " v" + pack.Version : string.Empty);
@@ -182,10 +192,84 @@ namespace ComboMod
                 (pack.EconomyValues.Count > 0 ? ", " + pack.EconomyValues.Count + " economy value(s)" : string.Empty) +
                 (pack.MilestoneValues.Count > 0 ? ", " + pack.MilestoneValues.Count + " milestone(s)" : string.Empty) +
                 (pack.Placement.Count > 0 ? ", " + pack.Placement.Count + " placement rule(s)" : string.Empty) +
+                (pack.Targets.Count > 0 ? ", " + pack.Targets.Count + " target rule(s)" : string.Empty) +
                 (pack.Warnings.Count > 0 ? ", " + pack.Warnings.Count + " warning(s)" : string.Empty));
 
             foreach (string warning in pack.Warnings)
                 ComboModApi.Log?.LogWarning("  " + Path.GetFileName(file) + " " + warning);
+        }
+
+        /// <summary>
+        /// Turn a parsed target line into the game's own structures.
+        /// <para>
+        /// Names are resolved here rather than at parse time because the valid set depends on
+        /// which kind of target it is, and reporting "Farm is not a rarity" is more useful than
+        /// a generic complaint about an unknown word.
+        /// </para>
+        /// </summary>
+        private static void ApplyTarget(Tuner tuner, TargetSpec spec, BalancePack pack)
+        {
+            switch (spec.Kind)
+            {
+                case TargetKind.Categories:
+                {
+                    var pairs = Resolve<GamePieceCategory>(spec, pack, "category");
+                    if (pairs != null) tuner.SetTargetCategories(pairs);
+                    break;
+                }
+                case TargetKind.Tags:
+                {
+                    var pairs = Resolve<GameTag>(spec, pack, "building or item");
+                    if (pairs != null) tuner.SetTargetTags(pairs);
+                    break;
+                }
+                case TargetKind.TileTypes:
+                {
+                    var pairs = Resolve<TileType>(spec, pack, "tile type");
+                    if (pairs != null) tuner.SetTargetTileTypes(pairs);
+                    break;
+                }
+                case TargetKind.Rarities:
+                {
+                    var pairs = Resolve<GameState.Data.Rarity>(spec, pack, "rarity");
+                    if (pairs != null) tuner.SetTargetRarities(pairs);
+                    break;
+                }
+            }
+        }
+
+        private static KeyValuePair<T, int>[] Resolve<T>(TargetSpec spec, BalancePack pack, string what)
+            where T : struct
+        {
+            var resolved = new List<KeyValuePair<T, int>>();
+
+            foreach (KeyValuePair<string, int> entry in spec.Entries)
+            {
+                T value;
+                bool ok;
+                try
+                {
+                    value = (T)Enum.Parse(typeof(T), entry.Key, ignoreCase: true);
+                    ok = Enum.IsDefined(typeof(T), value);
+                }
+                catch
+                {
+                    value = default(T);
+                    ok = false;
+                }
+
+                if (!ok)
+                {
+                    ComboModApi.Log?.LogWarning(
+                        "Pack '" + pack.Name + "': '" + entry.Key + "' is not a " + what
+                        + "; that target line was skipped.");
+                    return null;
+                }
+
+                resolved.Add(new KeyValuePair<T, int>(value, entry.Value));
+            }
+
+            return resolved.ToArray();
         }
 
         private static void ApplyMilestone(string key, string value, string source)

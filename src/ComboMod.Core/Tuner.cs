@@ -142,6 +142,71 @@ namespace ComboMod
             set => Set("_validTriggers", value);
         }
 
+        // --- what a piece looks at ---
+        //
+        // These are the deepest lever available: not how hard a building hits, but what it aims
+        // at. TargetNumber in the stored structs is only a 1-based ordinal the game assigns as
+        // it builds the list, so it is reproduced exactly rather than exposed -- Score is the
+        // value that means anything.
+
+        /// <summary>Categories this piece targets, each with a score. Replaces the whole list.</summary>
+        public Tuner SetTargetCategories(params KeyValuePair<GamePieceCategory, int>[] categoryScores)
+        {
+            var list = new List<TargetCategory>();
+            for (int i = 0; i < categoryScores.Length; i++)
+            {
+                list.Add(new TargetCategory
+                {
+                    TargetNumber = i + 1,
+                    GamePieceCategory = categoryScores[i].Key,
+                    Score = categoryScores[i].Value,
+                });
+            }
+
+            Set("_behaviourTargetCategories", list);
+            return this;
+        }
+
+        /// <summary>Specific tags this piece targets, each with a score.</summary>
+        public Tuner SetTargetTags(params KeyValuePair<GameTag, int>[] tagScores)
+        {
+            var list = new List<TargetTag>();
+            for (int i = 0; i < tagScores.Length; i++)
+            {
+                list.Add(new TargetTag
+                {
+                    TargetNumber = i + 1,
+                    Tag = tagScores[i].Key,
+                    Score = tagScores[i].Value,
+                });
+            }
+
+            Set("_behaviourTargetTags", list);
+            return this;
+        }
+
+        /// <summary>Tile types this piece targets, each with a score.</summary>
+        public Tuner SetTargetTileTypes(params KeyValuePair<TileType, int>[] tileScores)
+        {
+            var map = new Dictionary<TileType, int>();
+            foreach (KeyValuePair<TileType, int> entry in tileScores)
+                map[entry.Key] = entry.Value;
+
+            Set("_behaviourTargetTileTypes", map);
+            return this;
+        }
+
+        /// <summary>Rarities this piece targets, each with a score.</summary>
+        public Tuner SetTargetRarities(params KeyValuePair<Rarity, int>[] rarityScores)
+        {
+            var map = new Dictionary<Rarity, int>();
+            foreach (KeyValuePair<Rarity, int> entry in rarityScores)
+                map[entry.Key] = entry.Value;
+
+            Set("_behaviourTargetRarities", map);
+            return this;
+        }
+
         /// <summary>Replace the minor-category set in one call.</summary>
         public Tuner SetMinorCategories(params GamePieceCategory[] categories)
         {

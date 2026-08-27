@@ -40,13 +40,41 @@ namespace ComboMod
             {
                 var parts = new List<string>();
                 foreach (object item in items)
-                    parts.Add(item?.ToString() ?? "null");
+                    parts.Add(DescribeOne(item));
 
                 parts.Sort(StringComparer.OrdinalIgnoreCase);
                 return parts.Count == 0 ? "(none)" : string.Join(", ", parts.ToArray());
             }
 
-            return value.ToString();
+            return DescribeOne(value);
+        }
+
+        /// <summary>
+        /// Describe a single value, falling back to its fields when it has no ToString of its
+        /// own. Structs like TargetCategory otherwise print as "Entities.TargetCategory", which
+        /// tells a pack author nothing about what they just set.
+        /// </summary>
+        private static string DescribeOne(object item)
+        {
+            if (item == null)
+                return "null";
+
+            string text = item.ToString();
+            Type type = item.GetType();
+
+            // The default object.ToString returns the type name; anything else is deliberate.
+            if (text != type.FullName && text != type.Name)
+                return text;
+
+            var fields = new List<string>();
+            foreach (System.Reflection.FieldInfo field in type.GetFields(
+                         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+            {
+                object fieldValue = field.GetValue(item);
+                fields.Add(field.Name + "=" + (fieldValue ?? "null"));
+            }
+
+            return fields.Count == 0 ? text : "{" + string.Join(" ", fields.ToArray()) + "}";
         }
     }
 

@@ -79,6 +79,11 @@ namespace ComboMod.Editor
         private string _search = string.Empty;
         private GameTagSelection _selection;
         private string _exportedTo;
+
+        // Which set-valued knob is expanded in the editor, if any. Only one at a time: 47
+        // categories and 23 triggers both open at once would bury the numeric stats entirely.
+        private string _openSet;
+        private Vector2 _setScroll;
         private Vector2 _packScroll;
         private string _packName = "My Rebalance";
         private string _packAuthor = string.Empty;
@@ -620,6 +625,7 @@ namespace ComboMod.Editor
         {
             _selection = new GameTagSelection { HasValue = true, Tag = tag, IsItem = isItem };
             _editBuffer.Clear();
+            _openSet = null;
         }
 
         private void DrawKnobEditor()
@@ -648,10 +654,98 @@ namespace ComboMod.Editor
             foreach (Tuner.Knob knob in Tuner.Knobs)
                 DrawKnob(behaviour, knob);
 
+            // Set-valued knobs live below the scalars: they are less commonly edited and each
+            // expands into a long list.
+            GUILayout.Space(S(6f));
+            GUILayout.Label("Sets", _sourceStyle);
+            DrawCategorySet(behaviour);
+            DrawTriggerSet(behaviour);
+
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
         }
 
+
+        /// <summary>Minor categories: a 47-entry multi-select, collapsed until asked for.</summary>
+        private void DrawCategorySet(object behaviour)
+        {
+            var current = Tuner.ReadRaw(behaviour, "_minorCategories") as HashSet<GamePieceCategory>;
+            if (current == null)
+                return;
+
+            if (!DrawSetHeader("categories", "Minor categories", current.Count))
+                return;
+
+            _setScroll = GUILayout.BeginScrollView(_setScroll, GUI.skin.box, GUILayout.Height(S(150f)));
+
+            foreach (GamePieceCategory category in (GamePieceCategory[])Enum.GetValues(typeof(GamePieceCategory)))
+            {
+                if (category == GamePieceCategory.None)
+                    continue;
+
+                bool on = current.Contains(category);
+                bool want = GUILayout.Toggle(on, "  " + category);
+
+                if (want == on)
+                    continue;
+
+                // Rebuild rather than mutate: the live-edit layer stores the value it was given,
+                // and mutating the set in place would leave nothing for restore to put back.
+                var next = new HashSet<GamePieceCategory>(current);
+                if (want) next.Add(category); else next.Remove(category);
+
+                ComboModApi.SetOverride(_selection.Tag, _selection.IsItem, "_minorCategories", next);
+                break;
+            }
+
+            GUILayout.EndScrollView();
+        }
+
+        /// <summary>Valid triggers: which events this piece responds to at all.</summary>
+        private void DrawTriggerSet(object behaviour)
+        {
+            var current = Tuner.ReadRaw(behaviour, "_validTriggers") as HashSet<TriggerType>;
+            if (current == null)
+                return;
+
+            if (!DrawSetHeader("triggers", "Valid triggers", current.Count))
+                return;
+
+            _setScroll = GUILayout.BeginScrollView(_setScroll, GUI.skin.box, GUILayout.Height(S(150f)));
+
+            foreach (TriggerType trigger in (TriggerType[])Enum.GetValues(typeof(TriggerType)))
+            {
+                bool on = current.Contains(trigger);
+                bool want = GUILayout.Toggle(on, "  " + trigger);
+
+                if (want == on)
+                    continue;
+
+                var next = new HashSet<TriggerType>(current);
+                if (want) next.Add(trigger); else next.Remove(trigger);
+
+                ComboModApi.SetOverride(_selection.Tag, _selection.IsItem, "_validTriggers", next);
+                break;
+            }
+
+            GUILayout.EndScrollView();
+        }
+
+        /// <summary>Shared expand/collapse row. Returns whether the set should be drawn.</summary>
+        private bool DrawSetHeader(string id, string label, int count)
+        {
+            bool open = _openSet == id;
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(label, open ? _editedStyle : _changeStyle, GUILayout.Width(S(148f)));
+            GUILayout.Label(count + " set", _mutedStyle, GUILayout.Width(S(60f)));
+
+            if (GUILayout.Button(open ? "close" : "edit", GUILayout.Width(S(60f))))
+                _openSet = open ? null : id;
+
+            GUILayout.EndHorizontal();
+            return _openSet == id;
+        }
 
         private void DrawKnob(object behaviour, Tuner.Knob knob)
         {
