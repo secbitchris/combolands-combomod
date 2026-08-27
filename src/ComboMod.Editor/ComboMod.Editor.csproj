@@ -15,10 +15,6 @@
     <MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!-- Set once; every game reference hangs off this. -->
-    <GameManaged>C:\Program Files (x86)\Steam\steamapps\common\Combolands\Combolands_Data\Managed</GameManaged>
-  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="BepInEx.Core" Version="5.4.21" />

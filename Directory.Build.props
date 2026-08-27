@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    Where the game's assemblies live. Every project references them from here, so a contributor
+    whose Combolands is on another drive changes one line instead of three.
+
+    Override without editing this file:
+      dotnet build -p:GameManaged="D:\Games\Combolands\Combolands_Data\Managed"
+
+    Nothing from the game is ever copied into the output - every Reference sets Private=false -
+    so no game assembly is redistributed.
+  -->
+  <PropertyGroup Condition="'$(GameManaged)' == ''">
+    <GameManaged>C:\Program Files (x86)\Steam\steamapps\common\Combolands\Combolands_Data\Managed</GameManaged>
+  </PropertyGroup>
+
+</Project>

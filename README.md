@@ -408,7 +408,13 @@ bash packaging/build-packages.sh                                     # Thunderst
 
 `NuGet.config` adds the BepInEx feed (`BepInEx.Core` is not on nuget.org). Game assemblies are
 referenced straight out of the Steam install with `Private=false`, so **nothing from the game is
-ever redistributed**. Set `GameManaged` in the csproj if your install is elsewhere.
+ever redistributed**. If your game is elsewhere, override the path without editing anything:
+
+```bash
+dotnet build src/ComboMod.Cheats/ComboMod.Cheats.csproj -c Release -p:GameManaged="D:\Games\Combolands\Combolands_Data\Managed"
+```
+
+The default lives in `Directory.Build.props`, in one place rather than per project.
 
 Target framework is **netstandard2.1** — the game's assemblies require it and 2.0 fails to link.
 
