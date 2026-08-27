@@ -1,6 +1,6 @@
 {
   "name": "ComboMod",
-  "version_number": "0.2.0",
+  "version_number": "0.2.1",
   "website_url": "https://github.com/secbitchris/combolands-combomod",
   "description": "Save-safe rebalancing for Combolands. Load shareable text balance packs; no save risk.",
   "dependencies": [

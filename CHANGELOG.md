@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.1 — unreleased
+
+### Fixed
+- **A vanilla bug that permanently deletes plateau and canal ground from a run**, one
+  save/load cycle at a time. `MapController.Start` restores their sprites from the save and
+  then `InitializeTilemaps` replaces the dictionaries they are tracked in with empty ones.
+  The orphaned sprites keep rendering, so everything looks fine — until the next save, which
+  records only ground placed since the load. Load that and buildings stand on open water.
+  Core now preserves the dictionaries across `InitializeTilemaps`, and rebuilds ground a
+  damaged save no longer records from the tile data (`PrevType` survives, and only the
+  plateau/canal code paths ever write it). Config: `Fixes.FixPlateauSaveLoss`, on by default.
+
 ## 0.2.0 — unreleased
 
 Split into two plugins so a balance pack does not force a cheat panel on anyone.

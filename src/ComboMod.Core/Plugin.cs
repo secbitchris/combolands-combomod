@@ -26,7 +26,7 @@ namespace ComboMod
     {
         public const string PluginGuid = "dev.combolands.combomod.core";
         public const string PluginName = "ComboMod Core";
-        public const string PluginVersion = "0.2.0";
+        public const string PluginVersion = "0.2.1";
 
         internal static Plugin Instance { get; private set; }
 
@@ -83,6 +83,17 @@ namespace ComboMod
 
             if (LoadPatches.Enabled)
                 ApplyPatches("fast map load", typeof(LoadPatches));
+
+            MapFixPatches.Enabled = Config.Bind(
+                "Fixes", "FixPlateauSaveLoss", true,
+                "Fix a vanilla bug that permanently deletes plateau and canal ground from a "
+                + "run, one save/load cycle at a time. Loading restores their sprites and then "
+                + "InitializeTilemaps wipes the list they are tracked in, so the next save "
+                + "records only ground placed since the load. Also rebuilds ground that a "
+                + "damaged save no longer records, from the tile data (which survives).").Value;
+
+            if (MapFixPatches.Enabled)
+                ApplyPatches("plateau save fix", typeof(MapFixPatches));
 
             Profiler.Enabled = Config.Bind(
                 "Performance", "Profile", false,
