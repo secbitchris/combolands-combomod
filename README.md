@@ -353,6 +353,20 @@ game rebuilds wholesale. Triggers read the index during a cascade, so deferring 
 stale range data into scoring. The only lever there is board size, and the cost is superlinear in
 it.
 
+## What this has actually been tested on
+
+One person, one save, one machine. Verified against Combolands builds **24930533** and
+**24951781** on Windows 11.
+
+What is genuinely exercised: pack loading and per-line error recovery, precedence across all
+three layers, live editing applying to already-placed buildings, the integrity check on an
+unrecognised build, giving items, slot add and removal, and the map-load optimisation. What is
+not: any other machine, any other save shape, multiple packs from different authors fighting over
+the same building, or a board that is not a full 44x27.
+
+`src/ComboMod.SampleTweaks` is a **format demo, not balance advice** — three values chosen to
+exercise every kind of knob. It is deliberately excluded from the published packages.
+
 ## Scope
 
 Rebalancing existing content, editing run state, and giving existing items. **Adding new
