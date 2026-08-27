@@ -5,8 +5,16 @@ using GameState.Data;
 namespace ComboMod.SampleTweaks
 {
     /// <summary>
+    /// <b>A format demo, not balance advice.</b> These three values were chosen to exercise
+    /// every kind of knob — numeric, enum, draft weight — not because they make the game
+    /// better. Blacksmith at Common is a 14x swing nobody asked for.
+    /// <para>
+    /// Deliberately excluded from the published packages. It exists so the API has a readable
+    /// example next to it; for actual tuning use a balance pack, which needs no compiler.
+    /// </para>
+    /// <para>
     /// A worked example of the Tier 1 surface: three rebalances that between them exercise
-    /// every kind of knob (numeric, enum, draft weight) without touching anything serialized.
+    /// every kind of knob without touching anything serialized.
     /// <para>
     /// Delete this plugin and the game is bit-for-bit vanilla again, including any save
     /// written while it was loaded.

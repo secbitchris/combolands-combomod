@@ -1,7 +1,7 @@
 {
   "name": "ComboMod_Cheats",
   "version_number": "0.2.0",
-  "website_url": "",
+  "website_url": "https://github.com/secbitchris/combolands-combomod",
   "description": "Run editing and item giving for ComboMod. Writes to your save, unlike the rest of ComboMod.",
   "dependencies": [
     "BepInEx-BepInExPack-5.4.2100"
