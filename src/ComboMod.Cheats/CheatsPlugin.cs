@@ -55,6 +55,7 @@ namespace ComboMod.Cheats
     internal static class RunTab
     {
         private static readonly Dictionary<string, string> Buffer = new Dictionary<string, string>();
+        private static string _slotResult = string.Empty;
 
         internal static void Register() => PanelTabs.Register("Run", Draw);
 
@@ -96,7 +97,10 @@ namespace ComboMod.Cheats
             Field(c, "Rewinds", RunState.Rewinds, v => RunState.SetRewinds((int)v));
 
             GUILayout.Space(c.S(6f));
-            GUILayout.Label("Inventory slots (saved, add-only)", c.Section);
+            GUILayout.Label("Inventory slots (saved)", c.Section);
+
+            if (_slotResult.Length > 0)
+                GUILayout.Label(_slotResult, c.Highlight);
             Slots(c, "Heirloom slots", RunState.HeirloomSlots, RunState.HeirloomSlotSoftCap,
                 RunState.SetHeirloomSlots, RunState.AddHeirloomSlots);
             Slots(c, "Consumable slots", RunState.ConsumableSlots, int.MaxValue,
@@ -189,6 +193,11 @@ namespace ComboMod.Cheats
                 bool ok = label.StartsWith("Heirloom")
                     ? InventoryManager.RemoveHeirloomSlot(out reason)
                     : InventoryManager.RemoveConsumableSlot(out reason);
+
+                _slotResult = ok
+                    ? string.Empty
+                    : "Could not remove a " + (label.StartsWith("Heirloom") ? "heirloom" : "consumable")
+                      + " slot: " + reason + ". Empty one on the Manage tab first.";
 
                 if (!ok)
                     ComboModApi.Log?.LogWarning("Could not remove slot: " + reason);
@@ -298,7 +307,9 @@ namespace ComboMod.Cheats
             if (GUILayout.Button("Trim to vanilla", GUILayout.Width(c.S(120f))))
             {
                 int n = InventoryManager.TrimHeirloomSlots(InventoryManager.VanillaHeirloomSlots);
-                _result = "Removed " + n + " heirloom slot(s). Occupied slots are kept.";
+                _result = n == 0
+                    ? "No heirloom slots removed - every slot above 6 is occupied. Remove some heirlooms first."
+                    : "Removed " + n + " heirloom slot(s). Occupied slots are kept.";
             }
             GUILayout.EndHorizontal();
 
@@ -311,7 +322,9 @@ namespace ComboMod.Cheats
             if (GUILayout.Button("Trim to vanilla", GUILayout.Width(c.S(120f))))
             {
                 int n = InventoryManager.TrimConsumableSlots(InventoryManager.VanillaConsumableSlots);
-                _result = "Removed " + n + " consumable slot(s). Occupied slots are kept.";
+                _result = n == 0
+                    ? "No consumable slots removed - every slot above 3 is occupied. Use some or remove them first."
+                    : "Removed " + n + " consumable slot(s). Occupied slots are kept.";
             }
             GUILayout.EndHorizontal();
 
