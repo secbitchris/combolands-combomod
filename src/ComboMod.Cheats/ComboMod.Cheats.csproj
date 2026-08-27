@@ -35,6 +35,11 @@
       <HintPath>$(GameManaged)\UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- LayoutRebuilder, for re-flowing a panel after a slot is removed. -->
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(GameManaged)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="UnityEngine.CoreModule">
       <HintPath>$(GameManaged)\UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>

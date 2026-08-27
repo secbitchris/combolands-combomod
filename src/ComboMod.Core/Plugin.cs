@@ -59,6 +59,7 @@ namespace ComboMod
 
             _harmony = new Harmony(PluginGuid);
             _harmony.PatchAll(typeof(BehaviourInitPatches));
+            _harmony.PatchAll(typeof(EconomyPatches));
 
             // After Harmony is in place, so the first apply happens through the normal path.
             PackLoader.LoadAll();

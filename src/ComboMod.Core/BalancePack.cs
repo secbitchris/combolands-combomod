@@ -58,6 +58,9 @@ namespace ComboMod
 
         public readonly List<PackEntry> Entries = new List<PackEntry>();
 
+        /// <summary>Global economy values this pack sets, by <see cref="Economy"/> key.</summary>
+        public readonly Dictionary<string, float> EconomyValues = new Dictionary<string, float>();
+
         /// <summary>
         /// Anything the parser could not use, with line numbers. Surfaced in the panel rather
         /// than only logged: a pack that silently drops half its entries is worse than one that
@@ -136,6 +139,12 @@ namespace ComboMod
                     continue;
                 }
 
+                if (section.Equals("economy", StringComparison.OrdinalIgnoreCase))
+                {
+                    pack.ApplyEconomy(key, value, lineNumber);
+                    continue;
+                }
+
                 if (!sectionValid)
                     continue;
 
@@ -173,13 +182,16 @@ namespace ComboMod
             tag = GameTag.None;
             isItem = false;
 
-            if (section.Equals("pack", StringComparison.OrdinalIgnoreCase))
+            // [pack] and [economy] are handled by key, not by tag.
+            if (section.Equals("pack", StringComparison.OrdinalIgnoreCase)
+                || section.Equals("economy", StringComparison.OrdinalIgnoreCase))
                 return false;
 
             int dot = section.IndexOf('.');
             if (dot < 0)
             {
-                Warnings.Add("line " + lineNumber + ": section must be [pack], [building.Name] or [item.Name]");
+                Warnings.Add("line " + lineNumber
+                             + ": section must be [pack], [economy], [building.Name] or [item.Name]");
                 return false;
             }
 
@@ -225,6 +237,25 @@ namespace ComboMod
                 case "description": Description = value; break;
                 default: Warnings.Add("unknown [pack] key '" + key + "'"); break;
             }
+        }
+
+        private void ApplyEconomy(string key, string value, int lineNumber)
+        {
+            Economy.Setting setting = Economy.Find(key);
+            if (setting == null)
+            {
+                Warnings.Add("line " + lineNumber + ": unknown economy setting '" + key + "'");
+                return;
+            }
+
+            float parsed;
+            if (!float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out parsed))
+            {
+                Warnings.Add("line " + lineNumber + ": '" + value + "' is not a number");
+                return;
+            }
+
+            EconomyValues[setting.Key] = parsed;
         }
 
         private static Tuner.Knob FindKnobByName(string name)
