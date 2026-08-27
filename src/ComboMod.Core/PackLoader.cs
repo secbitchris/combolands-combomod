@@ -74,7 +74,15 @@ namespace ComboMod
             MilestoneTuning.ClearAll();
 
             foreach (string file in files)
+            {
+                // The live-edit file lives here for discoverability but is not a pack: loading
+                // it as one would put it in the pack layer, where it would lose to nothing and
+                // win over nothing correctly.
+                if (LiveEditStore.IsReserved(file))
+                    continue;
+
                 LoadOne(file);
+            }
 
             if (LoadedPacks.Count == 0)
                 ComboModApi.Log?.LogInfo("No balance packs found in " + directory);
@@ -84,6 +92,10 @@ namespace ComboMod
             // After every pack is registered, so the last word on a shared milestone wins the
             // same way it does for economy values.
             MilestoneTuning.Apply();
+
+            // After packs, so a restored edit sits on top of them exactly as it did when it was
+            // made.
+            LiveEditStore.LoadOnce();
 
             ComboModApi.Reapply();
         }
@@ -145,10 +157,10 @@ namespace ComboMod
             }
 
             foreach (KeyValuePair<string, float> economy in pack.EconomyValues)
-                Economy.Set(economy.Key, economy.Value);
+                Economy.Set(economy.Key, economy.Value, pack.Name);
 
             foreach (KeyValuePair<string, string> milestone in pack.MilestoneValues)
-                ApplyMilestone(milestone.Key, milestone.Value);
+                ApplyMilestone(milestone.Key, milestone.Value, pack.Name);
 
             // Placement is per-building, so it rides along as an extra registration rather than
             // being a global. That way it participates in enable/disable and restore like any
@@ -176,14 +188,14 @@ namespace ComboMod
                 ComboModApi.Log?.LogWarning("  " + Path.GetFileName(file) + " " + warning);
         }
 
-        private static void ApplyMilestone(string key, string value)
+        private static void ApplyMilestone(string key, string value, string source)
         {
             if (key.Equals("scale", StringComparison.OrdinalIgnoreCase))
             {
                 float scale;
                 if (float.TryParse(value, System.Globalization.NumberStyles.Float,
                                    System.Globalization.CultureInfo.InvariantCulture, out scale))
-                    MilestoneTuning.SetScale(scale);
+                    MilestoneTuning.SetScale(scale, source);
                 return;
             }
 
@@ -195,7 +207,7 @@ namespace ComboMod
             int score;
             if (int.TryParse(value, System.Globalization.NumberStyles.Integer,
                              System.Globalization.CultureInfo.InvariantCulture, out score))
-                MilestoneTuning.Set(size, score, which);
+                MilestoneTuning.Set(size, score, which, source);
         }
 
         /// <summary>Drop every pack registration, leaving code-registered tunes alone.</summary>

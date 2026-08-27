@@ -1,0 +1,17 @@
+# Legendary Unlocked
+#
+# Vanilla gives Legendary a draft weight of 0.00 in both roll tables, so the
+# buildings tagged Legendary can never appear in a draft at all. This gives them
+# a weight, making them genuinely reachable.
+#
+# Rarer than Masterwork on purpose: the point is that they can show up, not that
+# they should be common.
+
+[pack]
+name = Legendary Unlocked
+author = ComboMod
+version = 1.0
+description = Legendary buildings become draftable. They roll at 0.00 in vanilla.
+
+[economy]
+draft.legendary = 0.005

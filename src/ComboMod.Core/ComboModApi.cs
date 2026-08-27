@@ -209,6 +209,7 @@ namespace ComboMod
             }
 
             fields[field] = value;
+            LiveEditStore.MarkDirty();
             Reapply();
         }
 
@@ -219,6 +220,8 @@ namespace ComboMod
                 return;
 
             fields.Remove(field);
+            LiveEditStore.MarkDirty();
+
             if (fields.Count == 0)
             {
                 LiveEdits.Remove(tag);
@@ -234,6 +237,8 @@ namespace ComboMod
         public static void ClearAllOverrides()
         {
             LiveEdits.Clear();
+            LiveEditStore.MarkDirty();
+
             for (int i = Registry.Count - 1; i >= 0; i--)
                 if (Registry[i].Source == LiveEditSource)
                     Registry.RemoveAt(i);

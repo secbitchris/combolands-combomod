@@ -5,6 +5,12 @@
 Split into two plugins so a balance pack does not force a cheat panel on anyone.
 
 ### Added
+- **Live edits persist** across restarts, written a couple of seconds after you
+  stop typing and on quit, restored layered on top of packs. Previously an hour
+  of tuning was lost on close unless you remembered Save as pack.
+- **Conflict warnings** when one pack overwrites another's global setting. Later
+  still wins; it just no longer does so silently.
+- **Three example packs**: Gentler Curve, Legendary Unlocked, Quick Run.
 - **Difficulty curve**: a `[milestones]` pack section setting what each milestone
   demands, per city size, with a `scale` multiplier for the whole curve. Sets all
   three rank thresholds unless one is named.
