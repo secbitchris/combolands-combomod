@@ -33,7 +33,6 @@ namespace ComboMod
         private ConfigEntry<bool> _refuseOnVersionMismatch;
         private ConfigEntry<bool> _suppressAchievements;
         private Harmony _harmony;
-        private bool _guardPending;
 
         private void Awake()
         {
@@ -135,20 +134,21 @@ namespace ComboMod
 
         private void Update()
         {
-            // AchievementsHandler is a scene singleton that enables itself in Start(), so the
-            // swap cannot happen during Awake. Retry until the handler exists, then stop.
-            if (!_guardPending || !_suppressAchievements.Value)
+            if (!_suppressAchievements.Value || !ComboModApi.AnyTunesRegistered)
                 return;
 
-            if (AchievementGuard.Engage(Logger))
-                _guardPending = false;
+            // Re-arm whenever the guard is not currently in force. A scene change destroys the
+            // AchievementsHandler and builds a new one holding the real Steam platform, so
+            // engaging once at startup is not enough -- it has to be rechecked or achievements
+            // silently come back after the first trip to the menu.
+            if (!AchievementGuard.IsEngaged)
+                AchievementGuard.Engage(Logger);
         }
 
         /// <summary>Called by the postfix once behaviours have been rebuilt and tunes applied.</summary>
         internal void OnTunesApplied()
         {
-            if (_suppressAchievements.Value && ComboModApi.AnyTunesRegistered && !AchievementGuard.IsEngaged)
-                _guardPending = true;
+            // Arming is handled continuously in Update; this remains as a stable hook point.
         }
     }
 

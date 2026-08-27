@@ -447,6 +447,14 @@ namespace ComboMod
                 if (r.IsItem == isItem && !tags.Contains(r.Tag))
                     tags.Add(r.Tag);
 
+            // Also visit tags we have a snapshot for but no longer have any registration for.
+            // Deleting a pack and reloading removes its registrations, and without this those
+            // tags would never be visited again -- so the deleted pack's values would stay
+            // applied until the next scene load, looking like the reload had silently failed.
+            foreach (GameTag orphaned in snapshots.Keys)
+                if (!tags.Contains(orphaned))
+                    tags.Add(orphaned);
+
             // Only true when a value genuinely moved, which is the bar for paying for a cache
             // walk. An earlier flag tracked "a tune wrote a field at all", which was true almost
             // always and made the check pointless.
@@ -480,6 +488,19 @@ namespace ComboMod
                 {
                     foreach (KeyValuePair<string, object> field in previous.Vanilla)
                         Tuner.WriteRaw(behaviour, field.Key, field.Value);
+                }
+
+                // Nothing tunes this tag any more: it has been restored above, so forget it
+                // rather than carrying a stale snapshot forward for the rest of the session.
+                bool stillTuned = false;
+                foreach (TuneRegistration r in Registry)
+                    if (r.IsItem == isItem && r.Tag == tag) { stillTuned = true; break; }
+
+                if (!stillTuned)
+                {
+                    snapshots.Remove(tag);
+                    valuesActuallyMoved = true;
+                    continue;
                 }
 
                 var snapshot = new Snapshot { Behaviour = behaviour };

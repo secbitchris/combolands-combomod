@@ -39,8 +39,30 @@ namespace ComboMod
         private static IAchievementPlatform _originalPlatform;
         private static bool _engaged;
 
-        /// <summary>True while achievements are being suppressed.</summary>
-        public static bool IsEngaged => _engaged;
+        /// <summary>
+        /// The handler we swapped. AchievementsHandler is a scene singleton, so leaving a menu
+        /// and starting a run destroys it and builds a fresh one carrying the real Steam
+        /// platform. Tracking the instance is what lets us notice and re-engage; without it the
+        /// guard reports itself as on while achievements quietly go live again.
+        /// </summary>
+        private static AchievementsHandler _guarded;
+
+        /// <summary>
+        /// True only while the handler that exists right now is the one we neutered.
+        /// </summary>
+        public static bool IsEngaged
+        {
+            get
+            {
+                if (!_engaged)
+                    return false;
+
+                if (!SerializedMonoSingleton<AchievementsHandler>.HasInstance)
+                    return false;
+
+                return ReferenceEquals(SerializedMonoSingleton<AchievementsHandler>.Instance, _guarded);
+            }
+        }
 
         /// <summary>
         /// Replace the live achievement platform with a no-op.
@@ -52,7 +74,7 @@ namespace ComboMod
         /// </summary>
         public static bool Engage(ManualLogSource log)
         {
-            if (_engaged)
+            if (IsEngaged)
                 return true;
 
             try
@@ -64,8 +86,13 @@ namespace ComboMod
                 if (handler == null)
                     return false;
 
-                _originalPlatform = handler.achievementPlatform;
+                // Never capture our own no-op as the "original", which would happen if this ran
+                // twice against the same handler and would make Release a no-op.
+                if (!(handler.achievementPlatform is NullAchievementPlatform))
+                    _originalPlatform = handler.achievementPlatform;
+
                 handler.achievementPlatform = new NullAchievementPlatform();
+                _guarded = handler;
                 _engaged = true;
 
                 log.LogInfo("Achievement guard engaged; Steam achievements are suppressed for this session.");
@@ -86,9 +113,10 @@ namespace ComboMod
 
             try
             {
-                if (SerializedMonoSingleton<AchievementsHandler>.HasInstance)
+                if (SerializedMonoSingleton<AchievementsHandler>.HasInstance && _originalPlatform != null)
                     SerializedMonoSingleton<AchievementsHandler>.Instance.achievementPlatform = _originalPlatform;
 
+                _guarded = null;
                 _engaged = false;
                 log.LogInfo("Achievement guard released.");
             }
