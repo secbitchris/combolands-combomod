@@ -41,9 +41,12 @@ namespace ComboMod
                 if (!Directory.Exists(directory))
                 {
                     Directory.CreateDirectory(directory);
-                    WriteStarterFiles(directory);
                     ComboModApi.Log?.LogInfo("Created packs directory at " + directory);
                 }
+
+                // Checked every load, not just on creation: someone who tidies the folder should
+                // not permanently lose the format reference.
+                WriteStarterFiles(directory);
             }
             catch (Exception ex)
             {
@@ -221,7 +224,11 @@ namespace ComboMod
         {
             try
             {
-                File.WriteAllText(Path.Combine(directory, "README.txt"),
+                string readme = Path.Combine(directory, "README.txt");
+                if (File.Exists(readme))
+                    return;
+
+                File.WriteAllText(readme,
                     "ComboMod balance packs\n" +
                     "======================\n\n" +
                     "Drop .pack files here. They are plain text - open one in any editor.\n" +
