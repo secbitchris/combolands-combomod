@@ -106,9 +106,27 @@ namespace ComboMod
                         Tile tile = __instance.Grid[x, y];
 
                         // Only SetTileToGrass / SetTileToOcean ever write PrevType, so
-                        // PrevType == None means the tile was never terraformed.
+                        // PrevType == None means the tile was never terraformed. One kind of
+                        // plateau still lives on such a tile: the can-place-anywhere branch of
+                        // BuildBuildingAt creates a sprite under a sea-placed land building
+                        // WITHOUT touching the tile, so the only evidence is the building
+                        // itself. Mirror that branch's own predicate exactly.
                         if (tile.PrevType == TileType.None)
+                        {
+                            if (!tile.IsEmpty && tile.Building != null && tile.Type.IsSeaType())
+                            {
+                                HashSet<TileType> allowed =
+                                    tile.Building.Behaviour.GetTileTypesCanBePlacedOn(tile.Building.Tag);
+                                if (!allowed.Contains(TileType.Ocean) && !allowed.Contains(TileType.Shore)
+                                    && (renderer.PlateauTiles == null
+                                        || !renderer.PlateauTiles.ContainsKey(new Vector2Int(x, y))))
+                                {
+                                    __instance.CreatePlateauSprite(x, y);
+                                    plateaus++;
+                                }
+                            }
                             continue;
+                        }
 
                         bool prevWasSea = tile.PrevType == TileType.Sand
                                           || tile.PrevType == TileType.Shore
