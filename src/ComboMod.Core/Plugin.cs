@@ -58,8 +58,12 @@ namespace ComboMod
             }
 
             _harmony = new Harmony(PluginGuid);
-            _harmony.PatchAll(typeof(BehaviourInitPatches));
-            _harmony.PatchAll(typeof(EconomyPatches));
+
+            // Each group patched separately and guarded: a bad patch target should cost that
+            // feature, not the whole mod. An ambiguous overload in one diagnostic probe
+            // previously threw out of Awake and silently disabled everything after it.
+            ApplyPatches("behaviour hooks", typeof(BehaviourInitPatches));
+            ApplyPatches("economy", typeof(EconomyPatches));
 
             PerformancePatches.Enabled = Config.Bind(
                 "Performance", "OptimiseScoring", true,
@@ -69,7 +73,31 @@ namespace ComboMod
                 + "ProcessTrigger walks a dictionary comparing keys instead of looking one up. "
                 + "Both matter only on large boards. Turn off if you suspect them of anything.").Value;
 
-            _harmony.PatchAll(typeof(PerformancePatches));
+            ApplyPatches("performance", typeof(PerformancePatches));
+
+            LoadPatches.Enabled = Config.Bind(
+                "Performance", "FastMapLoad", true,
+                "Collapse the redundant spatial-index rebuilds that happen while a map is being "
+                + "populated. The game rebuilds the whole index once per building placed, then "
+                + "rebuilds it again at the end of the load anyway - so the intermediate ones are "
+                + "discarded work. Measured at 33 seconds on a full board.").Value;
+
+            if (LoadPatches.Enabled)
+                ApplyPatches("fast map load", typeof(LoadPatches));
+
+            Profiler.Enabled = Config.Bind(
+                "Performance", "Profile", false,
+                "Log where frame time goes during play, every 5 seconds. Diagnostic only: it "
+                + "adds a timestamp pair per call on several hot paths. Turn on when chasing a "
+                + "slowdown, off otherwise.").Value;
+
+            if (Profiler.Enabled)
+            {
+                if (ApplyPatches("profiler", typeof(ProfilerPatches)))
+                    Logger.LogWarning("Profiler ON - reports every 5s. Turn off Performance.Profile when done.");
+                else
+                    Profiler.Enabled = false;
+            }
             Logger.LogInfo("Scoring optimisations " + (PerformancePatches.Enabled ? "enabled" : "disabled") + ".");
 
             // After Harmony is in place, so the first apply happens through the normal path.
@@ -79,8 +107,28 @@ namespace ComboMod
                            + ComboModApi.Registrations.Count + " tune(s) registered.");
         }
 
+        /// <summary>
+        /// Patch one group, reporting rather than throwing. Returns whether it succeeded.
+        /// </summary>
+        private bool ApplyPatches(string label, Type container)
+        {
+            try
+            {
+                _harmony.PatchAll(container);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError("Could not apply " + label + " patches; that feature is off. " + ex.Message);
+                return false;
+            }
+        }
+
         private void LateUpdate()
         {
+            if (Profiler.Enabled)
+                Profiler.Frame(Time.unscaledDeltaTime * 1000f);
+
             // One cache walk per frame at most, however many tunes were applied.
             ComboModApi.FlushCacheInvalidation();
         }

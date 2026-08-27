@@ -323,6 +323,36 @@ so apply passes are more frequent than you would expect.
 
 ---
 
+## Performance
+
+Two optimisations, both off-by-config, both held to a stricter bar than a rebalance: a wrong tune
+is visible, a wrong "optimisation" corrupts scoring quietly.
+
+**`Performance.FastMapLoad`** — `BuildBuildingAt` ends by rebuilding the entire spatial index,
+walking every placed building and every tile in its range. During a load that runs once per
+building: 641 full rebuilds, ~33 seconds on a 1,188-building board. It is safe to collapse them
+because `InitializeGridFromSave` already ends with its own rebuild that supersedes every
+intermediate one, no triggers run during the load, and buildings are placed with
+`triggerOnBuild: false`. Load time went from 33 seconds to instant.
+
+**`Performance.OptimiseScoring`** — `UpdateSumOnScreen` sums every live scorer into a private
+field with no readers anywhere in the assembly, once per scorer tick, which is quadratic during a
+cascade. And `ProcessTrigger` walks its behaviour dictionary comparing keys rather than looking
+one up, which the game already does correctly in `GetBehaviourFor`.
+
+**`Performance.Profile`** — call counts, totals, worst-case per call, frame statistics and GC
+correlation, logged every 5 seconds. A diagnostic; it adds a timestamp pair per call on hot paths,
+so leave it off.
+
+### What is not fixable from a mod
+
+Frame hitches of ~175 ms when a building spawns mid-cascade are a genuine index rebuild caused by
+a genuine board change. Making it incremental would mean assuming a new building cannot alter
+other buildings' ranges — range-modifier buildings do exactly that, which is presumably why the
+game rebuilds wholesale. Triggers read the index during a cascade, so deferring it would feed
+stale range data into scoring. The only lever there is board size, and the cost is superlinear in
+it.
+
 ## Scope
 
 Rebalancing existing content, editing run state, and giving existing items. **Adding new
