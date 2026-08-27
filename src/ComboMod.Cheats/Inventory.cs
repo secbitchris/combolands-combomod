@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using Entities;
 using Library;
 using UI;
+using ComboMod;
 
-namespace ComboMod
+namespace ComboMod.Cheats
 {
     /// <summary>
     /// Putting things into the player's inventory.

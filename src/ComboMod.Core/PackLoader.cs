@@ -166,6 +166,18 @@ namespace ComboMod
         /// <summary>Save live edits as a pack file and reload, so it behaves like any other pack.</summary>
         public static string SaveLiveEditsAsPack(string name, string author)
         {
+            // Refuse rather than writing a pack with no entries. An empty file loads fine and
+            // reports "0 changes", which looks like the save silently failed.
+            int entries = 0;
+            foreach (KeyValuePair<GameTag, Dictionary<string, object>> edit in ComboModApi.Overrides)
+                entries += edit.Value.Count;
+
+            if (entries == 0)
+            {
+                ComboModApi.Log?.LogWarning("Nothing to save: no live edits are set.");
+                return null;
+            }
+
             try
             {
                 if (!Directory.Exists(PacksDirectory))

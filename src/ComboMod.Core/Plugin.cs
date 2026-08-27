@@ -26,7 +26,7 @@ namespace ComboMod
     {
         public const string PluginGuid = "dev.combolands.combomod.core";
         public const string PluginName = "ComboMod Core";
-        public const string PluginVersion = "0.1.0";
+        public const string PluginVersion = "0.2.0";
 
         internal static Plugin Instance { get; private set; }
 
