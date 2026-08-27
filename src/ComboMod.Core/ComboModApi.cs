@@ -233,22 +233,60 @@ namespace ComboMod
         /// Every tag that actually has a behaviour object, and is therefore editable. This is
         /// the real moddable set: a tag with no behaviour class has no base stats to change.
         /// </summary>
+        // Cached because the panel asks for these every OnGUI pass, which runs twice a frame.
+        // Building the list means allocating ~167 entries and sorting them by ToString(); doing
+        // that at 120 calls a second is real churn on a board that is already struggling.
+        private static readonly List<GameTag> BuildingTagCache = new List<GameTag>();
+        private static readonly List<GameTag> ItemTagCache = new List<GameTag>();
+        private static object _buildingTagSource;
+        private static object _itemTagSource;
+
+        /// <summary>
+        /// Every tag that actually has a behaviour object, and is therefore editable. This is
+        /// the real moddable set: a tag with no behaviour class has no base stats to change.
+        /// <para>
+        /// The returned list is a shared cache — read it, do not mutate it. It is rebuilt only
+        /// when the game swaps in a new behaviour dictionary, which happens on scene load.
+        /// </para>
+        /// </summary>
         public static List<GameTag> GetTunableTags(bool isItem)
         {
-            var tags = new List<GameTag>();
-
             if (isItem)
             {
-                if (ItemBehavioursMap.Instance != null)
-                    tags.AddRange(ItemBehavioursMap.Instance.ItemBehavioursDict.Keys);
-            }
-            else if (BuildingBehavioursMap.Instance != null)
-            {
-                tags.AddRange(BuildingBehavioursMap.Instance.BuildingBehaviourDict.Keys);
+                object source = ItemBehavioursMap.Instance != null
+                    ? ItemBehavioursMap.Instance.ItemBehavioursDict
+                    : null;
+
+                if (!ReferenceEquals(source, _itemTagSource))
+                {
+                    _itemTagSource = source;
+                    Rebuild(ItemTagCache, ItemBehavioursMap.Instance?.ItemBehavioursDict.Keys);
+                }
+
+                return ItemTagCache;
             }
 
-            tags.Sort((a, b) => string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase));
-            return tags;
+            object buildings = BuildingBehavioursMap.Instance != null
+                ? BuildingBehavioursMap.Instance.BuildingBehaviourDict
+                : null;
+
+            if (!ReferenceEquals(buildings, _buildingTagSource))
+            {
+                _buildingTagSource = buildings;
+                Rebuild(BuildingTagCache, BuildingBehavioursMap.Instance?.BuildingBehaviourDict.Keys);
+            }
+
+            return BuildingTagCache;
+        }
+
+        private static void Rebuild(List<GameTag> cache, ICollection<GameTag> keys)
+        {
+            cache.Clear();
+            if (keys == null)
+                return;
+
+            cache.AddRange(keys);
+            cache.Sort((a, b) => string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>How many registrations are currently switched on.</summary>
@@ -410,6 +448,10 @@ namespace ComboMod
                     tags.Add(r.Tag);
 
             bool changedAnything = false;
+
+            // Distinct from changedAnything, which is true whenever a tune wrote a field at all.
+            // A cache walk is only worth paying for when a value genuinely moved.
+            bool valuesActuallyMoved = false;
             // Debug level: the game calls the Init methods from three places
             // (BehavioursController, ItemPool, BuildingCategoryVisualization), so passes are
             // frequent and interleave. These headers are what make the log readable when they
@@ -476,11 +518,15 @@ namespace ComboMod
                     var changes = new List<FieldChange>();
                     foreach (KeyValuePair<string, object> field in before)
                     {
+                        object after = Tuner.ReadRaw(behaviour, field.Key);
+                        if (!Equals(field.Value, after))
+                            valuesActuallyMoved = true;
+
                         changes.Add(new FieldChange
                         {
                             Field = field.Key,
                             From = field.Value,
-                            To = Tuner.ReadRaw(behaviour, field.Key),
+                            To = after,
                         });
 
                         // Earliest value wins: we restored to vanilla above, so the first
@@ -505,8 +551,12 @@ namespace ComboMod
 
             // Stats are cached per placed building; without this, changes appear to work on
             // newly placed buildings and silently no-op on everything already on the map.
-            if (changedAnything || snapshots.Count > 0)
-                InvalidateStatCaches();
+            //
+            // Requested rather than performed: ResetCaches discards four dictionaries and walks
+            // every placed building, and Reapply calls this twice (buildings then items). On a
+            // full board that was two full walks per keystroke in the editor.
+            if (valuesActuallyMoved)
+                RequestCacheInvalidation();
         }
 
         /// <summary>
@@ -514,11 +564,39 @@ namespace ComboMod
         /// Guards internally on whether a BuildingController exists, so it is safe to call
         /// from the main menu.
         /// </summary>
+        /// <summary>True when a cache reset is owed. Flushed once per frame by the plugin.</summary>
+        public static bool CacheInvalidationPending { get; private set; }
+
+        /// <summary>
+        /// Mark the stat caches stale without paying for it yet. Several tunes applied in one
+        /// frame then cost one walk instead of one each.
+        /// </summary>
+        public static void RequestCacheInvalidation() => CacheInvalidationPending = true;
+
+        /// <summary>Perform a pending invalidation, if any. Called once per frame.</summary>
+        public static void FlushCacheInvalidation()
+        {
+            if (!CacheInvalidationPending)
+                return;
+
+            CacheInvalidationPending = false;
+            InvalidateStatCaches();
+        }
+
         public static void InvalidateStatCaches()
         {
             try
             {
+                var clock = System.Diagnostics.Stopwatch.StartNew();
                 BuildingExtensions.ResetCaches();
+                clock.Stop();
+
+                // Cost scales with placed buildings, so it is invisible early and material on a
+                // full board. Logged rather than assumed.
+                if (clock.Elapsed.TotalMilliseconds >= 5.0)
+                    Log?.LogWarning("Stat cache reset took " + clock.Elapsed.TotalMilliseconds.ToString("0.0") + " ms.");
+                else
+                    Log?.LogDebug("Stat cache reset: " + clock.Elapsed.TotalMilliseconds.ToString("0.00") + " ms.");
             }
             catch (Exception ex)
             {

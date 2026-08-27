@@ -68,6 +68,12 @@ namespace ComboMod
                            + ComboModApi.Registrations.Count + " tune(s) registered.");
         }
 
+        private void LateUpdate()
+        {
+            // One cache walk per frame at most, however many tunes were applied.
+            ComboModApi.FlushCacheInvalidation();
+        }
+
         private void Update()
         {
             // AchievementsHandler is a scene singleton that enables itself in Start(), so the
