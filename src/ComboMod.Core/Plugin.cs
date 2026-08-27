@@ -61,6 +61,17 @@ namespace ComboMod
             _harmony.PatchAll(typeof(BehaviourInitPatches));
             _harmony.PatchAll(typeof(EconomyPatches));
 
+            PerformancePatches.Enabled = Config.Bind(
+                "Performance", "OptimiseScoring", true,
+                "Replace two hot paths in the game with provably equivalent versions. "
+                + "UpdateSumOnScreen computes a private field with no readers anywhere, once per "
+                + "scorer tick over every live scorer, which is quadratic during a big combo. "
+                + "ProcessTrigger walks a dictionary comparing keys instead of looking one up. "
+                + "Both matter only on large boards. Turn off if you suspect them of anything.").Value;
+
+            _harmony.PatchAll(typeof(PerformancePatches));
+            Logger.LogInfo("Scoring optimisations " + (PerformancePatches.Enabled ? "enabled" : "disabled") + ".");
+
             // After Harmony is in place, so the first apply happens through the normal path.
             PackLoader.LoadAll();
 
