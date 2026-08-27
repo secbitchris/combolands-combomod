@@ -32,10 +32,34 @@ forgiving.
 
 ## Install
 
+**Download `ComboMod-installer.zip`, extract anywhere, double-click `Install ComboMod.bat`.**
+
+That is the whole thing. It finds your Combolands install through Steam — including on a second
+drive — downloads BepInEx, verifies it against a known SHA-256 before extracting anything, and
+copies the plugins in. Run it again any time; it only replaces what it owns.
+
+`Uninstall ComboMod.bat` reverses it completely. Any balance packs you wrote are copied to a
+dated folder in your Documents first, because they live inside `BepInEx\config` and would
+otherwise be removed along with it.
+
+Options, if you want them:
+
+```powershell
+.\Install-ComboMod.ps1 -CoreOnly                     # packs only, no in-game UI
+.\Install-ComboMod.ps1 -SkipCheats                   # framework + editor, no cheat menu
+.\Install-ComboMod.ps1 -GamePath "D:\Games\Combolands"
+.\Uninstall-ComboMod.ps1 -KeepBepInEx                # other mods still need it
+```
+
+### By hand
+
 1. [BepInEx 5.4.23.3 (x64, Unity Mono)](https://github.com/BepInEx/BepInEx/releases) into the
-   game folder.
-2. Plugin DLLs into `BepInEx/plugins/ComboMod/`.
-3. Launch.
+   game folder, next to `Combolands.exe`.
+2. Run the game once so BepInEx creates its folders, then quit.
+3. Plugin DLLs into `BepInEx/plugins/ComboMod/`.
+
+The step people get wrong is (1) — extracting one folder too deep, which fails silently: the game
+launches and nothing happens. That is the failure the installer exists to remove.
 
 Three plugins, installed separately. Each adds to the one before it:
 
