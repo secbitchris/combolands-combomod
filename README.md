@@ -8,6 +8,9 @@ without ever putting your save at risk.
 
 ---
 
+Working on the mod itself? **[HANDOFF.md](HANDOFF.md)** has the architecture, the traps found the
+hard way, what is verified and what is not, and the open work.
+
 ## Why it is safe
 
 The run save stores per-piece **deltas only** (`LocalRangeChanges`, `LocalMultChanges`, `Count`,
