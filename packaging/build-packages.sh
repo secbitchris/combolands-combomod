@@ -16,6 +16,33 @@ mkdir -p "$DIST"
 
 "$DOTNET" build "$ROOT/src/ComboMod.Cheats/ComboMod.Cheats.csproj" -c Release   # builds all three
 
+# Zip without assuming `zip` is installed -- it is absent from a stock Windows
+# toolchain, which is where this is most likely to be run. Python is already a
+# dependency here for tools/make-icons.py.
+archive() {
+  local src="$1" out="$2"
+
+  if command -v zip >/dev/null 2>&1; then
+    ( cd "$src" && zip -qr "$out" . )
+    return
+  fi
+
+  local py
+  py="$(command -v python3 || command -v py || true)"
+  [ -n "$py" ] || { echo "need either zip or python to build archives" >&2; exit 1; }
+
+  "$py" - "$src" "$out" <<'PYZIP'
+import os, sys, zipfile
+src, out = sys.argv[1], sys.argv[2]
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+    for root, _, files in os.walk(src):
+        for f in files:
+            full = os.path.join(root, f)
+            # Thunderstore wants manifest.json and icon.png at the archive root.
+            z.write(full, os.path.relpath(full, src).replace(os.sep, "/"))
+PYZIP
+}
+
 pack() {
   local name="$1" src="$2" dll="$3"
   local stage="$DIST/$name"
@@ -26,7 +53,7 @@ pack() {
   [ -f "$ROOT/packaging/$src/icon.png" ] && cp "$ROOT/packaging/$src/icon.png" "$stage/"
   cp "$dll" "$stage/plugins/ComboMod/"
 
-  ( cd "$stage" && zip -qr "$DIST/$name.zip" . )
+  archive "$stage" "$DIST/$name.zip"
   echo "built $DIST/$name.zip"
 }
 
@@ -36,4 +63,4 @@ pack "ComboMod-Cheats" "ComboMod-Cheats" "$ROOT/src/ComboMod.Cheats/bin/Release/
 
 echo
 echo "Note: SampleTweaks is a demo and is deliberately not packaged."
-echo "Add a 256x256 icon.png under packaging/<name>/ before uploading."
+echo "Icons come from tools/make-icons.py; rerun it after editing that script."

@@ -447,10 +447,9 @@ namespace ComboMod
                 if (r.IsItem == isItem && !tags.Contains(r.Tag))
                     tags.Add(r.Tag);
 
-            bool changedAnything = false;
-
-            // Distinct from changedAnything, which is true whenever a tune wrote a field at all.
-            // A cache walk is only worth paying for when a value genuinely moved.
+            // Only true when a value genuinely moved, which is the bar for paying for a cache
+            // walk. An earlier flag tracked "a tune wrote a field at all", which was true almost
+            // always and made the check pointless.
             bool valuesActuallyMoved = false;
             // Debug level: the game calls the Init methods from three places
             // (BehavioursController, ItemPool, BuildingCategoryVisualization), so passes are
@@ -538,7 +537,6 @@ namespace ComboMod
                     registration.LastChanges = changes;
                     if (changes.Count > 0)
                     {
-                        changedAnything = true;
                         foreach (FieldChange change in changes)
                             Log?.LogInfo("  " + tag + "." + change);
                     }
