@@ -37,15 +37,20 @@ forgiving.
 2. Plugin DLLs into `BepInEx/plugins/ComboMod/`.
 3. Launch.
 
-Two plugins, installed separately:
+Three plugins, installed separately. Each adds to the one before it:
 
 | | | |
 |---|---|---|
 | **ComboMod** | `ComboMod.Core.dll` | The framework. Loads balance packs, applies tunes, guards achievements. **No UI.** |
-| **ComboMod Editor** | `ComboMod.Editor.dll` | The in-game panel (**F6**). Optional, depends on Core. |
+| **ComboMod Editor** | `ComboMod.Editor.dll` | The panel (**F6**): browse and tune stats, manage packs. Nothing here can touch a save. |
+| **ComboMod Cheats** | `ComboMod.Cheats.dll` | Run editing and giving items. **Writes to your save.** |
 
-They are separate so that installing a balance pack does not also hand you a money editor you
-never asked for. Remove the Editor and packs keep working exactly the same.
+The split is the point. Someone who wants to rebalance buildings should not have to install a
+money editor to do it, and the boundary is the same one the save format draws: Core and Editor
+are Tier 1, Cheats is Tier 2.
+
+Cheats contributes its tabs through `PanelTabs.Register`, so the dependency runs one way — Cheats
+knows about Editor, never the reverse.
 
 **Uninstall:** delete `winhttp.dll`, `doorstop_config.ini`, `.doorstop_version` and `BepInEx/`.
 Steam's file integrity check stays green — nothing in the game install is modified.
@@ -110,30 +115,26 @@ Every **Building** (167), **Item**, and **Consumable** the game has, searchable.
 edit any base stat in place — type a number and it applies on the keystroke. Edited stats show
 in amber, edited pieces are marked `*`, `x` drops one edit, `Clear edits` drops all.
 
-**Give** hands the selected thing to the player:
+### Packs
 
-| Selected | Becomes |
+Loaded packs with per-pack switches, author, version, change count, and any parse warnings.
+Reload, and open the packs folder.
+
+### Run and Give (ComboMod Cheats only)
+
+**Run** — money, weeks remaining, score, milestone target, rerolls/removes/dismisses/rewinds, and
+inventory slot counts. Slots are **add-only**: the game has no `RemoveSlot`, so a count rises and
+never falls.
+
+**Give** — search anything givable and hand it over:
+
+| Kind | Becomes |
 |---|---|
 | Item / heirloom | an heirloom (gems auto-route to the Jewellery Box, tomes to the Bookshelf) |
 | Consumable / spell / favour | a consumable |
 | Building | a **blueprint card**, stacking onto an existing one |
 
-The button disables itself with a reason when it cannot work. Consumables carry their data on
-`ConsumableData` rather than a behaviour object, so that mode is give-only — there are no base
-stats to edit.
-
-### Run
-
-Live values for the current run — see [Two tiers](#two-tiers) for which persist.
-
-Money, weeks remaining, score, milestone target, rerolls/removes/dismisses/rewinds, and
-inventory slot counts. Slots are **add-only**: the game has no `RemoveSlot`, so a count rises and
-never falls.
-
-### Packs
-
-Loaded packs with per-pack switches, author, version, change count, and any parse warnings.
-Reload, and open the packs folder.
+Each row disables itself with a reason when it cannot work.
 
 ### Scale
 
@@ -241,7 +242,7 @@ Two traps worth knowing:
 Requires the .NET SDK.
 
 ```bash
-dotnet build src/ComboMod.Editor/ComboMod.Editor.csproj -c Release   # builds Core too
+dotnet build src/ComboMod.Cheats/ComboMod.Cheats.csproj -c Release   # builds all three
 bash packaging/build-packages.sh                                     # Thunderstore zips
 ```
 

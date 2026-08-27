@@ -17,7 +17,7 @@ namespace ComboMod.Editor
     /// </summary>
     public sealed class ModPanel : MonoBehaviour
     {
-        private enum Tab { Tunes, Browse, Run, Packs }
+        private enum Tab { Tunes, Browse, Packs }
 
         private const int WindowId = 0x0C0B0;
         private const float WindowWidth = 660f;
@@ -63,6 +63,8 @@ namespace ComboMod.Editor
 
         private bool _open;
         private Tab _tab = Tab.Tunes;
+        private int _extraTab = -1;
+        private readonly PanelContext _context = new PanelContext();
         private Rect _window = new Rect(60f, 60f, WindowWidth, WindowHeight);
         private Vector2 _tuneScroll;
         private Vector2 _listScroll;
@@ -73,17 +75,14 @@ namespace ComboMod.Editor
         // 0 buildings, 1 items, 2 consumables. Consumables have no behaviour object to edit, so
         // that mode is give-only.
         private int _browseMode;
-        private static readonly string[] BrowseModeNames = { "Buildings", "Items", "Consumables" };
+        private static readonly string[] BrowseModeNames = { "Buildings", "Items" };
         private string _search = string.Empty;
         private GameTagSelection _selection;
         private string _exportedTo;
         private Vector2 _packScroll;
         private string _packName = "My Rebalance";
         private string _packAuthor = string.Empty;
-        private string _giveResult = string.Empty;
 
-        // Run-tab text state, same reason as _editBuffer: keep partial typing alive.
-        private readonly Dictionary<string, string> _runBuffer = new Dictionary<string, string>();
 
         // Text state per knob, so a half-typed "-" or "1." survives the next repaint.
         private readonly Dictionary<string, string> _editBuffer = new Dictionary<string, string>();
@@ -273,12 +272,15 @@ namespace ComboMod.Editor
             DrawTabs();
             GUILayout.Space(S(4f));
 
-            if (_tab == Tab.Tunes)
+            if (_extraTab >= 0 && _extraTab < PanelTabs.Registered.Count)
+            {
+                SyncContext();
+                PanelTabs.Registered[_extraTab].Draw(_context);
+            }
+            else if (_tab == Tab.Tunes)
                 DrawTunesTab();
             else if (_tab == Tab.Browse)
                 DrawBrowseTab();
-            else if (_tab == Tab.Run)
-                DrawRunTab();
             else
                 DrawPacksTab();
 
@@ -325,25 +327,49 @@ namespace ComboMod.Editor
             GUILayout.EndVertical();
         }
 
+        private void Select(Tab tab)
+        {
+            _tab = tab;
+            _extraTab = -1;
+        }
+
+        /// <summary>Refresh the context handed to extension tabs so they track scale changes.</summary>
+        private void SyncContext()
+        {
+            _context.Scale = UiScale;
+            _context.Header = _headerStyle;
+            _context.Section = _sourceStyle;
+            _context.Body = _changeStyle;
+            _context.Muted = _mutedStyle;
+            _context.Highlight = _editedStyle;
+        }
+
         private void DrawTabs()
         {
             GUILayout.BeginHorizontal();
 
-            if (GUILayout.Toggle(_tab == Tab.Tunes, "Registered tunes", GUI.skin.button, GUILayout.Height(S(26f))))
-                _tab = Tab.Tunes;
+            if (GUILayout.Toggle(_extraTab < 0 && _tab == Tab.Tunes, "Registered tunes", GUI.skin.button, GUILayout.Height(S(26f))))
+                Select(Tab.Tunes);
 
-            if (GUILayout.Toggle(_tab == Tab.Browse, "Browse & edit", GUI.skin.button, GUILayout.Height(S(26f))))
-                _tab = Tab.Browse;
+            if (GUILayout.Toggle(_extraTab < 0 && _tab == Tab.Browse, "Browse & edit", GUI.skin.button, GUILayout.Height(S(26f))))
+                Select(Tab.Browse);
 
-            if (GUILayout.Toggle(_tab == Tab.Run, "Run", GUI.skin.button, GUILayout.Height(S(26f))))
+            if (GUILayout.Toggle(_extraTab < 0 && _tab == Tab.Packs, "Packs", GUI.skin.button, GUILayout.Height(S(26f))))
+                Select(Tab.Packs);
+
+            // Tabs contributed by companion assemblies, e.g. ComboMod.Cheats.
+            for (int i = 0; i < PanelTabs.Registered.Count; i++)
             {
-                if (_tab != Tab.Run)
-                    _runBuffer.Clear();
-                _tab = Tab.Run;
+                if (GUILayout.Toggle(_extraTab == i, PanelTabs.Registered[i].Title, GUI.skin.button, GUILayout.Height(S(26f))))
+                {
+                    _extraTab = i;
+                }
+                else if (_extraTab == i)
+                {
+                    // Deselected by clicking another toggle in the same frame.
+                    _extraTab = -1;
+                }
             }
-
-            if (GUILayout.Toggle(_tab == Tab.Packs, "Packs", GUI.skin.button, GUILayout.Height(S(26f))))
-                _tab = Tab.Packs;
 
             GUILayout.EndHorizontal();
         }
@@ -405,7 +431,7 @@ namespace ComboMod.Editor
             {
                 Select(registration.Tag, registration.IsItem);
                 _browsingItems = registration.IsItem;
-                _tab = Tab.Browse;
+                Select(Tab.Browse);
             }
 
             GUILayout.EndHorizontal();
@@ -506,150 +532,8 @@ namespace ComboMod.Editor
             GUILayout.EndVertical();
         }
 
-        // ---------- current run ----------
 
-        private void DrawRunTab()
-        {
-            if (!RunState.Available)
-            {
-                GUILayout.Label("No run loaded. Start or continue a game first.", _mutedStyle);
-                return;
-            }
 
-            GUILayout.BeginVertical(GUI.skin.box);
-            GUILayout.Label("Some of these persist, some do not", _headerStyle);
-            GUILayout.Label(
-                "Saved: money and the four consumable counters. Editing those changes GameState.save "
-                + "and removing ComboMod will not undo it (nothing is corrupted - they are plain integers).",
-                _mutedStyle);
-            GUILayout.Label(
-                "Not saved: weeks remaining, score, and milestone target. Those reset on reload.",
-                _mutedStyle);
-            GUILayout.EndVertical();
-
-            GUILayout.Space(S(6f));
-
-            GUILayout.Label("Saved with the run", _sourceStyle);
-            DrawRunField("Money", RunState.Money, v => RunState.SetMoney((int)v));
-
-            GUILayout.Space(S(6f));
-            GUILayout.Label("Runtime only", _sourceStyle);
-            DrawRunField("Weeks remaining", RunState.WeeksRemaining, v => RunState.SetWeeksRemaining((int)v));
-            DrawRunField("Score", RunState.Score_, v => RunState.SetScore(v));
-            DrawRunField("Milestone target", RunState.ScoreRequired, v => RunState.SetScoreRequired((int)v));
-
-            GUILayout.Space(S(6f));
-            GUILayout.Label("Consumables (saved)", _sourceStyle);
-            DrawRunField("Rerolls", RunState.Rerolls, v => RunState.SetRerolls((int)v));
-            DrawRunField("Removes", RunState.Removes, v => RunState.SetRemoves((int)v));
-            DrawRunField("Dismisses", RunState.Dismisses, v => RunState.SetDismisses((int)v));
-            DrawRunField("Rewinds", RunState.Rewinds, v => RunState.SetRewinds((int)v));
-
-            GUILayout.Space(S(6f));
-            GUILayout.Label("Inventory slots (saved, add-only)", _sourceStyle);
-            DrawSlotField("Heirloom slots", RunState.HeirloomSlots,
-                RunState.HeirloomSlotSoftCap, RunState.SetHeirloomSlots, RunState.AddHeirloomSlots);
-            DrawSlotField("Consumable slots", RunState.ConsumableSlots,
-                int.MaxValue, RunState.SetConsumableSlots, RunState.AddConsumableSlots);
-
-            GUILayout.Space(S(4f));
-            GUILayout.Label(
-                "Money is written directly, bypassing the lifetime gold counters in Unlocks.save.",
-                _mutedStyle);
-            GUILayout.Label(
-                "Slots cannot be removed - the game has no RemoveSlot, so a count only goes up.",
-                _mutedStyle);
-            GUILayout.Label(
-                "To add actual items: RightShift+C+L arms the game's own cheats, then RightShift+I "
-                + "(heirlooms), +C (consumables), +B (buildings).",
-                _mutedStyle);
-        }
-
-        /// <summary>
-        /// One run value: live number, an editable field, and +/- nudges. Applies on Enter or
-        /// when focus leaves, not per keystroke, because these drive HUD animations.
-        /// </summary>
-        private void DrawRunField(string label, long current, Action<long> apply)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(label, _changeStyle, GUILayout.Width(S(140f)));
-            GUILayout.Label(current.ToString(), _editedStyle, GUILayout.Width(S(90f)));
-
-            string key = label;
-            string text;
-            if (!_runBuffer.TryGetValue(key, out text))
-            {
-                text = current.ToString();
-                _runBuffer[key] = text;
-            }
-
-            _runBuffer[key] = GUILayout.TextField(_runBuffer[key], GUILayout.Width(S(100f)));
-
-            if (GUILayout.Button("Set", GUILayout.Width(S(46f))))
-            {
-                long parsed;
-                if (long.TryParse(_runBuffer[key], out parsed))
-                    apply(parsed);
-                else
-                    _runBuffer[key] = current.ToString();
-            }
-
-            if (GUILayout.Button("-10", GUILayout.Width(S(40f))))
-            {
-                apply(current - 10);
-                _runBuffer.Remove(key);
-            }
-
-            if (GUILayout.Button("+10", GUILayout.Width(S(40f))))
-            {
-                apply(current + 10);
-                _runBuffer.Remove(key);
-            }
-
-            GUILayout.EndHorizontal();
-        }
-
-        /// <summary>
-        /// A slot count: current value, a target field that only accepts increases, and a +1.
-        /// Rendered separately from <see cref="DrawRunField"/> because slots are add-only and
-        /// the -10 nudge would be a lie.
-        /// </summary>
-        private void DrawSlotField(
-            string label, int current, int softCap, Func<int, bool> setTo, Action<int> add)
-        {
-            GUILayout.BeginHorizontal();
-            GUILayout.Label(label, _changeStyle, GUILayout.Width(S(140f)));
-            GUILayout.Label(
-                current + (current > softCap ? " (past cap)" : string.Empty),
-                current > softCap ? _editedStyle : _changeStyle,
-                GUILayout.Width(S(90f)));
-
-            string key = "slot:" + label;
-            string text;
-            if (!_runBuffer.TryGetValue(key, out text))
-            {
-                text = current.ToString();
-                _runBuffer[key] = text;
-            }
-
-            _runBuffer[key] = GUILayout.TextField(_runBuffer[key], GUILayout.Width(S(100f)));
-
-            if (GUILayout.Button("Set", GUILayout.Width(S(46f))))
-            {
-                int parsed;
-                if (int.TryParse(_runBuffer[key], out parsed))
-                    setTo(parsed);
-                _runBuffer.Remove(key);
-            }
-
-            if (GUILayout.Button("+1", GUILayout.Width(S(40f))))
-            {
-                add(1);
-                _runBuffer.Remove(key);
-            }
-
-            GUILayout.EndHorizontal();
-        }
 
         // ---------- browse and edit any value ----------
 
@@ -659,14 +543,13 @@ namespace ComboMod.Editor
             GUILayout.Label("Search", GUILayout.Width(S(48f)));
             _search = GUILayout.TextField(_search, GUILayout.Width(S(180f)));
 
-            int wanted = GUILayout.Toolbar(_browseMode, BrowseModeNames, GUILayout.Width(S(230f)));
+            int wanted = GUILayout.Toolbar(_browseMode, BrowseModeNames, GUILayout.Width(S(160f)));
             if (wanted != _browseMode)
             {
                 _browseMode = wanted;
                 _browsingItems = _browseMode == 1;
                 _selection = default(GameTagSelection);
                 _editBuffer.Clear();
-                _giveResult = string.Empty;
             }
 
             GUILayout.FlexibleSpace();
@@ -702,10 +585,7 @@ namespace ComboMod.Editor
         {
             GUILayout.BeginVertical(GUILayout.Width(S(200f)));
 
-            List<GameTag> tags = _browseMode == 2
-                ? Inventory.GetAllConsumableTags()
-                : ComboModApi.GetTunableTags(_browsingItems);
-
+            List<GameTag> tags = ComboModApi.GetTunableTags(_browsingItems);
             if (tags.Count == 0)
             {
                 GUILayout.Label("Behaviours are not built yet.\nStart or load a run first.", _mutedStyle);
@@ -756,30 +636,12 @@ namespace ComboMod.Editor
             object behaviour = ComboModApi.GetBehaviour(_selection.Tag, _selection.IsItem);
             if (behaviour == null)
             {
-                // Consumables, spells and favours carry their data on ConsumableData rather than
-                // a _GamePieceBehaviour, so there are no base stats to edit - only giving.
-                GUILayout.BeginHorizontal();
-                GUILayout.Label(_selection.Tag.ToString(), _headerStyle);
-                GUILayout.FlexibleSpace();
-                DrawGiveButton(_selection.Tag);
-                GUILayout.EndHorizontal();
-
-                if (_giveResult.Length > 0)
-                    GUILayout.Label(_giveResult, _mutedStyle);
-
-                GUILayout.Label("No editable base stats for this one.", _mutedStyle);
+                GUILayout.Label(_selection.Tag + " has no behaviour loaded right now.", _mutedStyle);
                 GUILayout.EndVertical();
                 return;
             }
 
-            GUILayout.BeginHorizontal();
             GUILayout.Label(_selection.Tag.ToString(), _headerStyle);
-            GUILayout.FlexibleSpace();
-            DrawGiveButton(_selection.Tag);
-            GUILayout.EndHorizontal();
-
-            if (_giveResult.Length > 0)
-                GUILayout.Label(_giveResult, _mutedStyle);
 
             _knobScroll = GUILayout.BeginScrollView(_knobScroll, GUI.skin.box, GUILayout.Height(S(328f)));
 
@@ -790,34 +652,6 @@ namespace ComboMod.Editor
             GUILayout.EndVertical();
         }
 
-        /// <summary>
-        /// Give one of the selected tag. The label names what it will actually become, since a
-        /// building handed to the consumables panel arrives as a blueprint rather than a building.
-        /// </summary>
-        private void DrawGiveButton(GameTag tag)
-        {
-            Inventory.GiveKind kind = Inventory.ClassifyTag(tag);
-            if (kind == Inventory.GiveKind.None)
-                return;
-
-            string label = kind == Inventory.GiveKind.Blueprint ? "Give blueprint" : "Give " + kind.ToString().ToLowerInvariant();
-
-            string reason;
-            bool canGive = Inventory.CanGive(tag, out reason);
-
-            GUI.enabled = canGive;
-            if (GUILayout.Button(label, GUILayout.Width(S(120f))))
-            {
-                string why;
-                _giveResult = Inventory.Give(tag, out why)
-                    ? "Gave " + tag + "."
-                    : "Could not give " + tag + ": " + why;
-            }
-            GUI.enabled = true;
-
-            if (!canGive)
-                GUILayout.Label(reason, _mutedStyle, GUILayout.Width(S(150f)));
-        }
 
         private void DrawKnob(object behaviour, Tuner.Knob knob)
         {

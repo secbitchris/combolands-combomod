@@ -3,8 +3,9 @@ using System.Reflection;
 using GameState;
 using Library;
 using UI;
+using ComboMod;
 
-namespace ComboMod
+namespace ComboMod.Cheats
 {
     /// <summary>
     /// Live run values: money, weeks, score, and the consumable counters.

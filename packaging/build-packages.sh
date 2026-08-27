@@ -14,7 +14,7 @@ DIST="$ROOT/packaging/dist"
 rm -rf "$DIST"
 mkdir -p "$DIST"
 
-"$DOTNET" build "$ROOT/src/ComboMod.Editor/ComboMod.Editor.csproj" -c Release
+"$DOTNET" build "$ROOT/src/ComboMod.Cheats/ComboMod.Cheats.csproj" -c Release   # builds all three
 
 pack() {
   local name="$1" src="$2" dll="$3"
@@ -32,6 +32,7 @@ pack() {
 
 pack "ComboMod"        "ComboMod"        "$ROOT/src/ComboMod.Core/bin/Release/ComboMod.Core.dll"
 pack "ComboMod-Editor" "ComboMod-Editor" "$ROOT/src/ComboMod.Editor/bin/Release/ComboMod.Editor.dll"
+pack "ComboMod-Cheats" "ComboMod-Cheats" "$ROOT/src/ComboMod.Cheats/bin/Release/ComboMod.Cheats.dll"
 
 echo
 echo "Note: SampleTweaks is a demo and is deliberately not packaged."

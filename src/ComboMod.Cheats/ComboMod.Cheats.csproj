@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>ComboMod.Cheats</AssemblyName>
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <!-- Unity's Mono profile has no nullable annotations; keep it plain. -->
+    <Nullable>disable</Nullable>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <!-- MSB3277: the game ships dozens of Unity DLLs we do not reference; the conflicts are between
+         assemblies we never touch. CS0436 duplicates from BepInEx+Unity both defining shims. -->
+    <NoWarn>$(NoWarn);CS0436;MSB3277</NoWarn>
+    <MSBuildWarningsAsMessages>MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Set once; every game reference hangs off this. -->
+    <GameManaged>C:\Program Files (x86)\Steam\steamapps\common\Combolands\Combolands_Data\Managed</GameManaged>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+    <PackageReference Include="HarmonyX" Version="2.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Private=false: these ship with the game, never with the plugin. -->
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(GameManaged)\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(GameManaged)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(GameManaged)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- The panel is IMGUI (GUILayout/GUIStyle) keyed off legacy Input. Both live in their own
+         Unity modules rather than UnityEngine.dll. -->
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(GameManaged)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(GameManaged)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(GameManaged)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- AchievementsHandler derives from SerializedMonoSingleton, which derives from Odin's
+         SerializedMonoBehaviour. Touching the handler at all drags Sirenix in. -->
+    <Reference Include="Sirenix.Serialization">
+      <HintPath>$(GameManaged)\Sirenix.Serialization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Sirenix.OdinInspector.Attributes">
+      <HintPath>$(GameManaged)\Sirenix.OdinInspector.Attributes.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Sirenix.Utilities">
+      <HintPath>$(GameManaged)\Sirenix.Utilities.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ComboMod.Core\ComboMod.Core.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\ComboMod.Editor\ComboMod.Editor.csproj">
+      <Private>false</Private>
+    </ProjectReference>
+  </ItemGroup>
+
+</Project>

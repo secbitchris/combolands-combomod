@@ -5,8 +5,6 @@ using System.Reflection;
 using System.Security.Cryptography;
 using BepInEx.Logging;
 using Entities;
-using GameState;
-using UI;
 using UnityEngine;
 
 namespace ComboMod
@@ -144,28 +142,37 @@ namespace ComboMod
             if (!HasField(typeof(_GamePieceBehaviour), "_behaviourType"))
                 Missing.Add("_GamePieceBehaviour._behaviourType");
 
-            // Run-state members, used by the Run tab only.
-            checkedCount++;
-            if (!HasField(typeof(GameController), "_weeksAllowed"))
-                Missing.Add("GameController._weeksAllowed (weeks editing)");
-
-            checkedCount++;
-            if (!HasField(typeof(ScoreController), "<Money>k__BackingField"))
-                Missing.Add("ScoreController.Money backing field (money editing)");
-
-            // Methods the panel and RunState call directly. These are public, so a rename would
-            // be a compile error rather than a runtime surprise -- but a build swapped in
-            // underneath us would still hit it.
-            checkedCount++;
-            if (!HasMethod(typeof(GameController), "DebugChangeWeeks"))
-                Missing.Add("GameController.DebugChangeWeeks");
-
-            checkedCount++;
-            if (!HasMethod(typeof(ScorePanel), "UpdateGoalText"))
-                Missing.Add("ScorePanel.UpdateGoalText (HUD refresh)");
+            // Only Core's own surface. Run-state members moved to ComboMod.Cheats, which
+            // registers its own checks via AddCheck so the count reflects what is installed.
+            foreach (KeyValuePair<string, Func<bool>> extra in ExtraChecks)
+            {
+                checkedCount++;
+                if (!extra.Value())
+                    Missing.Add(extra.Key);
+            }
 
             CheckedMemberCount = checkedCount;
         }
+
+        private static readonly Dictionary<string, Func<bool>> ExtraChecks =
+            new Dictionary<string, Func<bool>>();
+
+        /// <summary>
+        /// Let a companion assembly add its own reflected members to the integrity check, so the
+        /// report covers what is actually installed rather than what Core happens to know about.
+        /// Call before the gate runs, i.e. from a plugin's Awake.
+        /// </summary>
+        public static void AddCheck(string description, Func<bool> present)
+        {
+            if (!string.IsNullOrEmpty(description) && present != null)
+                ExtraChecks[description] = present;
+        }
+
+        /// <summary>True when a non-public or public instance field exists on the type or a base.</summary>
+        public static bool HasInstanceField(Type type, string name) => HasField(type, name);
+
+        /// <summary>True when a method of that name exists on the type or a base.</summary>
+        public static bool HasInstanceMethod(Type type, string name) => HasMethod(type, name);
 
         private static bool HasField(Type type, string name)
         {
