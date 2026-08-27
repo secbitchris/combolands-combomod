@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using BepInEx;
 using Entities;
+using Environment;
 
 namespace ComboMod
 {
@@ -67,9 +68,10 @@ namespace ComboMod
 
             Array.Sort(files, StringComparer.OrdinalIgnoreCase);
 
-            // Economy is global rather than per-piece, so it is rebuilt from scratch on every
-            // load: a pack that stops setting a value must let vanilla back through.
+            // Global settings are rebuilt from scratch on every load: a pack that stops setting
+            // a value must let vanilla back through rather than leaving the last value latched.
             Economy.ClearAll();
+            MilestoneTuning.ClearAll();
 
             foreach (string file in files)
                 LoadOne(file);
@@ -78,6 +80,10 @@ namespace ComboMod
                 ComboModApi.Log?.LogInfo("No balance packs found in " + directory);
             else
                 ComboModApi.Log?.LogInfo("Loaded " + LoadedPacks.Count + " balance pack(s).");
+
+            // After every pack is registered, so the last word on a shared milestone wins the
+            // same way it does for economy values.
+            MilestoneTuning.Apply();
 
             ComboModApi.Reapply();
         }
@@ -141,6 +147,20 @@ namespace ComboMod
             foreach (KeyValuePair<string, float> economy in pack.EconomyValues)
                 Economy.Set(economy.Key, economy.Value);
 
+            foreach (KeyValuePair<string, string> milestone in pack.MilestoneValues)
+                ApplyMilestone(milestone.Key, milestone.Value);
+
+            // Placement is per-building, so it rides along as an extra registration rather than
+            // being a global. That way it participates in enable/disable and restore like any
+            // other tune, instead of being a parallel mechanism.
+            foreach (KeyValuePair<GameTag, TileType[]> placement in pack.Placement)
+            {
+                TileType[] types = placement.Value;
+                pack.Registrations.Add(ComboModApi.RegisterFromPack(
+                    placement.Key, isItem: false, packName: pack.Name,
+                    configure: tuner => tuner.SetCanBePlacedOn(types)));
+            }
+
             LoadedPacks.Add(pack);
 
             string label = pack.Name + (pack.Version.Length > 0 ? " v" + pack.Version : string.Empty);
@@ -148,10 +168,34 @@ namespace ComboMod
                 "Pack '" + label + "': " + pack.Entries.Count + " change(s) across " +
                 byTag.Count + " piece(s)" +
                 (pack.EconomyValues.Count > 0 ? ", " + pack.EconomyValues.Count + " economy value(s)" : string.Empty) +
+                (pack.MilestoneValues.Count > 0 ? ", " + pack.MilestoneValues.Count + " milestone(s)" : string.Empty) +
+                (pack.Placement.Count > 0 ? ", " + pack.Placement.Count + " placement rule(s)" : string.Empty) +
                 (pack.Warnings.Count > 0 ? ", " + pack.Warnings.Count + " warning(s)" : string.Empty));
 
             foreach (string warning in pack.Warnings)
                 ComboModApi.Log?.LogWarning("  " + Path.GetFileName(file) + " " + warning);
+        }
+
+        private static void ApplyMilestone(string key, string value)
+        {
+            if (key.Equals("scale", StringComparison.OrdinalIgnoreCase))
+            {
+                float scale;
+                if (float.TryParse(value, System.Globalization.NumberStyles.Float,
+                                   System.Globalization.CultureInfo.InvariantCulture, out scale))
+                    MilestoneTuning.SetScale(scale);
+                return;
+            }
+
+            GameState.CitySize size;
+            MilestoneTuning.Threshold which;
+            if (!MilestoneTuning.TryParseKey(key, out size, out which))
+                return;
+
+            int score;
+            if (int.TryParse(value, System.Globalization.NumberStyles.Integer,
+                             System.Globalization.CultureInfo.InvariantCulture, out score))
+                MilestoneTuning.Set(size, score, which);
         }
 
         /// <summary>Drop every pack registration, leaving code-registered tunes alone.</summary>
