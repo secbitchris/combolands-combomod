@@ -64,6 +64,10 @@ namespace ComboMod
 
             Array.Sort(files, StringComparer.OrdinalIgnoreCase);
 
+            // Economy is global rather than per-piece, so it is rebuilt from scratch on every
+            // load: a pack that stops setting a value must let vanilla back through.
+            Economy.ClearAll();
+
             foreach (string file in files)
                 LoadOne(file);
 
@@ -131,12 +135,16 @@ namespace ComboMod
                 pack.Registrations.Add(registration);
             }
 
+            foreach (KeyValuePair<string, float> economy in pack.EconomyValues)
+                Economy.Set(economy.Key, economy.Value);
+
             LoadedPacks.Add(pack);
 
             string label = pack.Name + (pack.Version.Length > 0 ? " v" + pack.Version : string.Empty);
             ComboModApi.Log?.LogInfo(
                 "Pack '" + label + "': " + pack.Entries.Count + " change(s) across " +
                 byTag.Count + " piece(s)" +
+                (pack.EconomyValues.Count > 0 ? ", " + pack.EconomyValues.Count + " economy value(s)" : string.Empty) +
                 (pack.Warnings.Count > 0 ? ", " + pack.Warnings.Count + " warning(s)" : string.Empty));
 
             foreach (string warning in pack.Warnings)

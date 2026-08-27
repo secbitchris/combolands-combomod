@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using BepInEx;
 using ComboMod.Editor;
 using Entities;
+using UI;
 using UnityEngine;
 
 namespace ComboMod.Cheats
@@ -44,8 +45,9 @@ namespace ComboMod.Cheats
 
             RunTab.Register();
             GiveTab.Register();
+            ManageTab.Register();
 
-            Logger.LogInfo(PluginName + " " + PluginVersion + " loaded. Run and Give tabs added to the panel.");
+            Logger.LogInfo(PluginName + " " + PluginVersion + " loaded. Run, Give and Manage tabs added.");
         }
     }
 
@@ -179,7 +181,141 @@ namespace ComboMod.Cheats
                 Buffer.Remove(key);
             }
 
+            // Slots are add-only in the game; ComboMod removes them itself, so this is the one
+            // place a decrement is honest. It only takes empty slots.
+            if (GUILayout.Button("-1", GUILayout.Width(c.S(40f))))
+            {
+                string reason;
+                bool ok = label.StartsWith("Heirloom")
+                    ? InventoryManager.RemoveHeirloomSlot(out reason)
+                    : InventoryManager.RemoveConsumableSlot(out reason);
+
+                if (!ok)
+                    ComboModApi.Log?.LogWarning("Could not remove slot: " + reason);
+
+                Buffer.Remove(key);
+            }
+
             GUILayout.EndHorizontal();
+        }
+    }
+
+    /// <summary>
+    /// The Manage tab: what you are actually holding, with a way to drop it.
+    /// <para>
+    /// Exists because the game's own inventory UI lays out for a handful of slots. Once ComboMod
+    /// has added a dozen, the normal interface stops being usable — so removing things has to be
+    /// possible from here too, not just adding them.
+    /// </para>
+    /// </summary>
+    internal static class ManageTab
+    {
+        private static Vector2 _scroll;
+        private static string _result = string.Empty;
+
+        internal static void Register() => PanelTabs.Register("Manage", Draw);
+
+        private static void Draw(PanelContext c)
+        {
+            if (!RunState.Available)
+            {
+                GUILayout.Label("No run loaded. Start or continue a game first.", c.Muted);
+                return;
+            }
+
+            GUILayout.BeginVertical(GUI.skin.box);
+            GUILayout.Label("What you are holding", c.Header);
+            GUILayout.Label(
+                "The game's inventory UI is laid out for a few slots. If you have added many, "
+                + "this is the reliable way to see and clear them.",
+                c.Muted);
+            GUILayout.EndVertical();
+
+            GUILayout.Space(c.S(4f));
+            DrawSlotSummary(c);
+
+            if (_result.Length > 0)
+                GUILayout.Label(_result, c.Body);
+
+            _scroll = GUILayout.BeginScrollView(_scroll, GUI.skin.box, GUILayout.Height(c.S(320f)));
+
+            List<ItemHeirloom> items = InventoryManager.HeldItems();
+            GUILayout.Label("Heirlooms (" + items.Count + ")", c.Section);
+            if (items.Count == 0)
+                GUILayout.Label("   none", c.Muted);
+
+            foreach (ItemHeirloom item in items)
+            {
+                if (item == null)
+                    continue;
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("   " + item.Tag, c.Body, GUILayout.Width(c.S(220f)));
+
+                if (GUILayout.Button("Sell", GUILayout.Width(c.S(56f))))
+                    _result = InventoryManager.SellItem(item) ? "Sold " + item.Tag + "." : "Could not sell.";
+
+                if (GUILayout.Button("Remove", GUILayout.Width(c.S(72f))))
+                    _result = InventoryManager.RemoveItem(item) ? "Removed " + item.Tag + "." : "Could not remove.";
+
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.Space(c.S(8f));
+
+            List<Consumable> consumables = InventoryManager.HeldConsumables();
+            GUILayout.Label("Consumables (" + consumables.Count + ")", c.Section);
+            if (consumables.Count == 0)
+                GUILayout.Label("   none", c.Muted);
+
+            foreach (Consumable consumable in consumables)
+            {
+                if (consumable == null)
+                    continue;
+
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("   " + consumable.GameTag, c.Body, GUILayout.Width(c.S(220f)));
+
+                if (GUILayout.Button("Remove", GUILayout.Width(c.S(72f))))
+                    _result = InventoryManager.RemoveConsumable(consumable)
+                        ? "Removed " + consumable.GameTag + "."
+                        : "Could not remove.";
+
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.EndScrollView();
+        }
+
+        private static void DrawSlotSummary(PanelContext c)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Heirloom slots", c.Body, GUILayout.Width(c.S(130f)));
+            GUILayout.Label(
+                RunState.HeirloomSlots + " (vanilla " + InventoryManager.VanillaHeirloomSlots + ")",
+                c.Body, GUILayout.Width(c.S(130f)));
+
+            if (GUILayout.Button("Trim to vanilla", GUILayout.Width(c.S(120f))))
+            {
+                int n = InventoryManager.TrimHeirloomSlots(InventoryManager.VanillaHeirloomSlots);
+                _result = "Removed " + n + " heirloom slot(s). Occupied slots are kept.";
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("Consumable slots", c.Body, GUILayout.Width(c.S(130f)));
+            GUILayout.Label(
+                RunState.ConsumableSlots + " (vanilla " + InventoryManager.VanillaConsumableSlots + ")",
+                c.Body, GUILayout.Width(c.S(130f)));
+
+            if (GUILayout.Button("Trim to vanilla", GUILayout.Width(c.S(120f))))
+            {
+                int n = InventoryManager.TrimConsumableSlots(InventoryManager.VanillaConsumableSlots);
+                _result = "Removed " + n + " consumable slot(s). Occupied slots are kept.";
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Space(c.S(4f));
         }
     }
 
