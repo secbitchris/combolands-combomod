@@ -148,24 +148,37 @@ namespace ComboMod.Cheats
         /// equivalent, so this filters the enum directly.
         /// </para>
         /// </summary>
+        // The GameTag enum cannot change at runtime, so these are computed once. They were
+        // being rebuilt every OnGUI pass: Enum.GetValues over 359 members, filtered and sorted,
+        // twice a frame, for a list that is by definition constant.
+        private static List<GameTag> _consumableTags;
+        private static List<GameTag> _itemTags;
+
         public static List<GameTag> GetAllConsumableTags()
         {
-            var tags = new List<GameTag>();
+            if (_consumableTags != null)
+                return _consumableTags;
 
+            var tags = new List<GameTag>();
             foreach (GameTag tag in Enum.GetValues(typeof(GameTag)))
                 if (tag.IsConsumableTag())
                     tags.Add(tag);
 
             tags.Sort((a, b) => string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase));
-            return tags;
+            _consumableTags = tags;
+            return _consumableTags;
         }
 
         /// <summary>Item and heirloom tags, sorted by name.</summary>
         public static List<GameTag> GetAllItemTags()
         {
+            if (_itemTags != null)
+                return _itemTags;
+
             var tags = new List<GameTag>(GameTagExtensions.GetAllItemTags());
             tags.Sort((a, b) => string.Compare(a.ToString(), b.ToString(), StringComparison.OrdinalIgnoreCase));
-            return tags;
+            _itemTags = tags;
+            return _itemTags;
         }
     }
 }
