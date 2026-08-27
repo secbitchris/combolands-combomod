@@ -102,12 +102,36 @@ namespace ComboMod
             return setting?.Vanilla ?? 0f;
         }
 
+        // Who last set each key, so a second pack touching it can say whose value it replaced.
+        private static readonly Dictionary<string, string> SetBy = new Dictionary<string, string>();
+
+        /// <summary>Who most recently set a key, or null.</summary>
+        public static string LastSetBy(string key)
+        {
+            string who;
+            return SetBy.TryGetValue(key ?? string.Empty, out who) ? who : null;
+        }
+
         /// <summary>Set one economy value. Unknown keys are rejected so typos are not silent.</summary>
-        public static bool Set(string key, float value)
+        public static bool Set(string key, float value, string source = null)
         {
             Setting setting = Find(key);
             if (setting == null)
                 return false;
+
+            // Two packs setting the same global is legal -- later wins -- but silent. Someone
+            // enabling two difficulty packs and seeing only one take effect deserves to be told
+            // which, rather than concluding the mod is broken.
+            string previous;
+            if (source != null && SetBy.TryGetValue(setting.Key, out previous) && previous != source)
+            {
+                ComboModApi.Log?.LogWarning(
+                    "'" + source + "' overrides '" + previous + "' for " + setting.Key
+                    + ". Later packs win; disable one in the Packs tab if that is not what you want.");
+            }
+
+            if (source != null)
+                SetBy[setting.Key] = source;
 
             Values[setting.Key] = value;
             ComboModApi.Log?.LogInfo(
@@ -128,9 +152,13 @@ namespace ComboMod
         public static void ClearAll()
         {
             if (Values.Count == 0)
+            {
+                SetBy.Clear();
                 return;
+            }
 
             Values.Clear();
+            SetBy.Clear();
             ComboModApi.Log?.LogInfo("Economy restored to vanilla.");
         }
 

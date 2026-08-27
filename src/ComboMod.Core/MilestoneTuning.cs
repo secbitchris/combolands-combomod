@@ -68,15 +68,43 @@ namespace ComboMod
         /// <summary>The scale in force. 1.0 is the shipped curve.</summary>
         public static float Scale => _scale;
 
+        // Who last set each milestone, and the scale, for conflict reporting.
+        private static readonly Dictionary<CitySize, string> SetBy = new Dictionary<CitySize, string>();
+        private static string _scaleSetBy;
+
         /// <summary>Set one milestone's requirement.</summary>
-        public static void Set(CitySize size, int value, Threshold which = Threshold.All)
+        public static void Set(CitySize size, int value, Threshold which = Threshold.All, string source = null)
         {
+            string previous;
+            if (source != null && SetBy.TryGetValue(size, out previous) && previous != source)
+                ComboModApi.Log?.LogWarning(
+                    "'" + source + "' overrides '" + previous + "' for milestone " + size + ".");
+
+            if (source != null)
+                SetBy[size] = source;
+
             Requested[size] = new Target { Value = value, Which = which };
         }
 
-        /// <summary>Multiply every milestone. 0.5 halves the curve, 2 doubles it.</summary>
-        public static void SetScale(float scale)
+        /// <summary>
+        /// Multiply every milestone. 0.5 halves the curve, 2 doubles it.
+        /// <para>
+        /// Two difficulty packs both setting a scale is the most likely conflict of all, and the
+        /// least visible -- the numbers still change, just not by the amount one of them asked
+        /// for.
+        /// </para>
+        /// </summary>
+        public static void SetScale(float scale, string source = null)
         {
+            if (source != null && _scaleSetBy != null && _scaleSetBy != source)
+                ComboModApi.Log?.LogWarning(
+                    "'" + source + "' overrides '" + _scaleSetBy + "' for the milestone scale "
+                    + "(" + _scale.ToString("0.##") + " -> " + scale.ToString("0.##") + "). "
+                    + "Later packs win; disable one in the Packs tab.");
+
+            if (source != null)
+                _scaleSetBy = source;
+
             _scale = scale;
         }
 
@@ -86,7 +114,9 @@ namespace ComboMod
             bool had = AnyOverrides;
 
             Requested.Clear();
+            SetBy.Clear();
             _scale = 1f;
+            _scaleSetBy = null;
 
             if (had)
                 Restore();

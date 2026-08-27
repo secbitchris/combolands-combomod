@@ -1,0 +1,16 @@
+# Gentler Curve
+#
+# Every milestone asks for 30% less. Nothing else changes -- buildings, items and
+# the shop are all vanilla, so the game plays exactly as designed, just with more
+# room to reach each target.
+#
+# A good first pack to try: one line, one obvious effect, easy to undo.
+
+[pack]
+name = Gentler Curve
+author = ComboMod
+version = 1.0
+description = Every milestone target reduced by 30%. Nothing else changed.
+
+[milestones]
+scale = 0.7

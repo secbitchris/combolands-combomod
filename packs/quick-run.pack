@@ -1,0 +1,21 @@
+# Quick Run
+#
+# For short sessions. Milestones ask for less, the shop leans towards blueprints
+# so you build sooner, and blueprints cost less.
+#
+# This is a deliberately opinionated pack -- it changes the pace of the game, not
+# just its numbers. Read it as an example of combining sections.
+
+[pack]
+name = Quick Run
+author = ComboMod
+version = 1.0
+description = Shorter milestones, cheaper blueprints, a shop that favours them.
+
+[milestones]
+scale = 0.6
+
+[economy]
+shop.blueprint = 10
+blueprintprice = 3
+sellratio      = 0.65

@@ -145,6 +145,12 @@ namespace ComboMod
                 AchievementGuard.Engage(Logger);
         }
 
+        private void OnApplicationQuit()
+        {
+            // Last chance: the debounce may still be counting down when the game closes.
+            LiveEditStore.Flush();
+        }
+
         /// <summary>Called by the postfix once behaviours have been rebuilt and tunes applied.</summary>
         internal void OnTunesApplied()
         {

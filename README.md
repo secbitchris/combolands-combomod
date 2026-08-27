@@ -184,6 +184,40 @@ Tile types are `Grass`, `Sand`, `Shore`, `Ocean`. Buildings only — items have 
 `GetTileTypesCanBePlacedOn` is virtual and some behaviours override it outright (Enclave does),
 and `CanBeBuiltOn` can still veto for its own reasons.
 
+### Your edits are kept
+
+Anything you change in the panel is written to `_live-edits.pack` a couple of seconds after you
+stop typing, and on quit. It is restored on the next launch, layered on top of packs exactly as
+it was when you made it.
+
+Tuning is real work and the Save-as-pack button is easy to miss. Losing an hour of it to a habit
+you had not learned yet is how people stop using a tool.
+
+The file is a normal pack — rename it and it becomes a shareable one.
+
+### When two packs disagree
+
+Later wins, which is usually right and always silent. So a pack that overwrites another pack's
+global setting says so:
+
+```
+'Quick Run' overrides 'Gentler Curve' for the milestone scale (0.7 -> 0.6).
+Later packs win; disable one in the Packs tab.
+```
+
+Per-building stats layer the same way, and the Registered tunes tab shows every source, so you
+can see who won without reading a log.
+
+### Packs that ship with it
+
+Three, in `packs/` in the repo. Copy the ones you want into your packs folder.
+
+| | |
+|---|---|
+| **Gentler Curve** | Every milestone asks 30% less. One line, one obvious effect. |
+| **Legendary Unlocked** | Legendary buildings become draftable — they roll at 0.00 in vanilla, so they can never appear at all. |
+| **Quick Run** | Shorter milestones, cheaper blueprints, a shop that favours them. Opinionated: it changes pace, not just numbers. |
+
 ### Why not JSON
 
 Packs exist so that someone who does not write code can author and share one, and INI is
