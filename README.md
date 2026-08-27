@@ -184,6 +184,27 @@ Tile types are `Grass`, `Sand`, `Shore`, `Ocean`. Buildings only — items have 
 `GetTileTypesCanBePlacedOn` is virtual and some behaviours override it outright (Enclave does),
 and `CanBeBuiltOn` can still veto for its own reasons.
 
+### What a piece targets
+
+The deepest lever here: not how hard a building hits, but what it aims at.
+
+```ini
+[building.Bakery]
+TargetCategories = Farm:3, Nature:1
+TargetTags       = Windmill:5
+TargetTileTypes  = Grass:2, Sand
+TargetRarities   = Rare:4
+```
+
+Each entry is `name:score`; the score is optional and defaults to 0, matching the game's own
+no-score overload. Order matters — it becomes the `TargetNumber` the game assigns.
+
+Names are validated per kind, so a mistake says which kind it failed as:
+
+```
+'Farm' is not a rarity; that target line was skipped.
+```
+
 ### Your edits are kept
 
 Anything you change in the panel is written to `_live-edits.pack` a couple of seconds after you
@@ -359,8 +380,8 @@ The 17 numeric knobs plus `Rarity`:
 `Money` `Score` `Rerolls` `Removes` `Dismisses` `Enchant` `StoredValue` `RangeModification`
 `CooldownModification` `RollChanceMultiplier` `Rarity`
 
-Collection-valued knobs (`MinorCategories`, `ValidTriggers`) and `MajorCategory` are API-only —
-not meaningfully editable as text.
+`MinorCategories` and `ValidTriggers` are editable in the panel — expand **Sets** under a
+piece's stats for a multi-select. `MajorCategory` remains API-only.
 
 **Nothing clamps you to vanilla ranges, because the game does not either.** The only hard clamp
 in the stat system is cooldown flooring at 1. Measured vanilla ranges for all of them are in the

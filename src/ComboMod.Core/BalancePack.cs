@@ -7,6 +7,26 @@ using Environment;
 
 namespace ComboMod
 {
+    /// <summary>Which kind of thing a piece is being told to target.</summary>
+    public enum TargetKind
+    {
+        Categories,
+        Tags,
+        TileTypes,
+        Rarities,
+    }
+
+    /// <summary>One target-selection line: what a piece aims at, and how much each is worth.</summary>
+    public struct TargetSpec
+    {
+        public GameTag Tag;
+        public bool IsItem;
+        public TargetKind Kind;
+
+        /// <summary>Entry name to score, in the order written, which becomes TargetNumber.</summary>
+        public List<KeyValuePair<string, int>> Entries;
+    }
+
     /// <summary>
     /// One tuned value read from a pack file.
     /// </summary>
@@ -68,6 +88,12 @@ namespace ComboMod
 
         /// <summary>Placement overrides: tag to the tile types it may be built on.</summary>
         public readonly Dictionary<GameTag, TileType[]> Placement = new Dictionary<GameTag, TileType[]>();
+
+        /// <summary>
+        /// Target-selection overrides, kept as raw "name:score" text per piece and per kind so
+        /// the loader can turn them into the game's own structures.
+        /// </summary>
+        public readonly List<TargetSpec> Targets = new List<TargetSpec>();
 
         /// <summary>
         /// Anything the parser could not use, with line numbers. Surfaced in the panel rather
@@ -166,6 +192,13 @@ namespace ComboMod
                 if (key.Equals("PlaceOn", StringComparison.OrdinalIgnoreCase))
                 {
                     pack.ApplyPlacement(sectionTag, sectionIsItem, value, lineNumber);
+                    continue;
+                }
+
+                TargetKind targetKind;
+                if (TryTargetKind(key, out targetKind))
+                {
+                    pack.ApplyTarget(sectionTag, sectionIsItem, targetKind, value, lineNumber);
                     continue;
                 }
 
@@ -309,6 +342,69 @@ namespace ComboMod
             }
 
             MilestoneValues.Add(new KeyValuePair<string, string>(key, value));
+        }
+
+        private static bool TryTargetKind(string key, out TargetKind kind)
+        {
+            switch (key.ToLowerInvariant())
+            {
+                case "targetcategories": kind = TargetKind.Categories; return true;
+                case "targettags":       kind = TargetKind.Tags;       return true;
+                case "targettiletypes":  kind = TargetKind.TileTypes;  return true;
+                case "targetrarities":   kind = TargetKind.Rarities;   return true;
+                default: kind = TargetKind.Categories; return false;
+            }
+        }
+
+        /// <summary>
+        /// Parse "Farm:2, Nature:1" into ordered name/score pairs.
+        /// <para>
+        /// The score is optional and defaults to 0, matching the game's own simpler overload
+        /// which sets a target with no score at all.
+        /// </para>
+        /// </summary>
+        private void ApplyTarget(GameTag tag, bool isItem, TargetKind kind, string value, int lineNumber)
+        {
+            var entries = new List<KeyValuePair<string, int>>();
+
+            foreach (string part in value.Split(','))
+            {
+                string piece = part.Trim();
+                if (piece.Length == 0)
+                    continue;
+
+                string name = piece;
+                int score = 0;
+
+                int colon = piece.IndexOf(':');
+                if (colon >= 0)
+                {
+                    name = piece.Substring(0, colon).Trim();
+                    string scoreText = piece.Substring(colon + 1).Trim();
+
+                    if (!int.TryParse(scoreText, NumberStyles.Integer, CultureInfo.InvariantCulture, out score))
+                    {
+                        Warnings.Add("line " + lineNumber + ": '" + scoreText + "' is not a whole number");
+                        return;
+                    }
+                }
+
+                if (name.Length == 0)
+                {
+                    Warnings.Add("line " + lineNumber + ": missing a name before ':'");
+                    return;
+                }
+
+                entries.Add(new KeyValuePair<string, int>(name, score));
+            }
+
+            if (entries.Count == 0)
+            {
+                Warnings.Add("line " + lineNumber + ": needs at least one entry, like Farm:2");
+                return;
+            }
+
+            Targets.Add(new TargetSpec { Tag = tag, IsItem = isItem, Kind = kind, Entries = entries });
         }
 
         private void ApplyPlacement(GameTag tag, bool isItem, string value, int lineNumber)
