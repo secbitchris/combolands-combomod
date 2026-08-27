@@ -5,6 +5,11 @@
 Split into two plugins so a balance pack does not force a cheat panel on anyone.
 
 ### Added
+- **Difficulty curve**: a `[milestones]` pack section setting what each milestone
+  demands, per city size, with a `scale` multiplier for the whole curve. Sets all
+  three rank thresholds unless one is named.
+- **Placement rules**: `PlaceOn` inside a building's section sets which tile types
+  it can be built on.
 - **Fast map load**: the game rebuilds its whole spatial index once per building
   placed, then rebuilds it again at the end of the load anyway. On a full board
   that was 641 discarded rebuilds totalling ~33 seconds. Collapsed to one.

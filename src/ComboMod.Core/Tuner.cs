@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Entities;
+using Environment;
 using GameState.Data;
 
 namespace ComboMod
@@ -110,6 +111,28 @@ namespace ComboMod
         {
             get => (HashSet<GamePieceCategory>)Get("_minorCategories");
             set => Set("_minorCategories", value);
+        }
+
+        /// <summary>
+        /// Tile types this building may be placed on. Buildings only: items have no such field,
+        /// so touching this on an item throws and is reported per-field.
+        /// <para>
+        /// Widening the set permits a placement, it does not force one.
+        /// GetTileTypesCanBePlacedOn is virtual and some behaviours override it outright
+        /// (Enclave does), and CanBeBuiltOn can still veto for its own reasons.
+        /// </para>
+        /// </summary>
+        public HashSet<TileType> CanBePlacedOn
+        {
+            get => (HashSet<TileType>)Get("_canBePlacedOn");
+            set => Set("_canBePlacedOn", value);
+        }
+
+        /// <summary>Replace the placement set in one call.</summary>
+        public Tuner SetCanBePlacedOn(params TileType[] types)
+        {
+            CanBePlacedOn = new HashSet<TileType>(types);
+            return this;
         }
 
         /// <summary>Which triggers this behaviour responds to. Assign a new set rather than mutating.</summary>

@@ -145,6 +145,45 @@ These live in `static` classes with hardcoded switch expressions, so there is no
 on; they are Harmony prefixes that consult a table and fall through to the original whenever no
 override is set. An install with no economy pack behaves byte-identically to vanilla.
 
+### Difficulty curve
+
+`[milestones]` sets what each milestone demands. Also Tier 1 — the thresholds live on a
+ScriptableObject that is never written to disk; the save stores only `MilestoneIndex`.
+
+```ini
+[milestones]
+scale        = 0.8      # multiply every milestone
+Hamlet       = 250      # or set one outright
+Village.rankA = 1500    # or just one of its three thresholds
+```
+
+City sizes are `Start`, `Dwelling`, `Hamlet`, `Village`, `SmallTown`, `LargeTown`, `SmallCity`,
+`BigCity`, `CapitalCity`, `Metropolis`.
+
+Each milestone carries **three** thresholds — a base one, and higher ones used at Yeoman and
+Governor rank. A bare value sets all three, because setting only the base leaves a ranked player
+on untouched numbers, looking at a mod that appears to do nothing. Add `.base`, `.rankA` or
+`.rankB` to target one. `scale` applies after any explicit value, and floors at 1 since a
+milestone of 0 would complete instantly.
+
+One caveat: the ScriptableObject is shared for the session, so a change applies to later runs too
+until the game restarts.
+
+### Placement rules
+
+`PlaceOn` inside a building's section sets which tile types it can be built on:
+
+```ini
+[building.Bakery]
+PlaceOn = Grass, Sand, Shore
+```
+
+Tile types are `Grass`, `Sand`, `Shore`, `Ocean`. Buildings only — items have no such field.
+
+**Widening the set permits a placement, it does not force one.**
+`GetTileTypesCanBePlacedOn` is virtual and some behaviours override it outright (Enclave does),
+and `CanBeBuiltOn` can still veto for its own reasons.
+
 ### Why not JSON
 
 Packs exist so that someone who does not write code can author and share one, and INI is

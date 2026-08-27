@@ -20,7 +20,34 @@ namespace ComboMod
         public string DisplayName => Field.TrimStart('_');
 
         public override string ToString() =>
-            DisplayName + ": " + (From ?? "null") + " -> " + (To ?? "null");
+            DisplayName + ": " + Describe(From) + " -> " + Describe(To);
+
+        /// <summary>
+        /// Render a value for a human. Collections print their contents rather than their type
+        /// name -- "Grass, Sand, Shore" instead of
+        /// "System.Collections.Generic.HashSet`1[Environment.TileType]", which is what the
+        /// default ToString gives and which tells a pack author nothing.
+        /// </summary>
+        private static string Describe(object value)
+        {
+            if (value == null)
+                return "null";
+
+            if (value is string s)
+                return s;
+
+            if (value is System.Collections.IEnumerable items)
+            {
+                var parts = new List<string>();
+                foreach (object item in items)
+                    parts.Add(item?.ToString() ?? "null");
+
+                parts.Sort(StringComparer.OrdinalIgnoreCase);
+                return parts.Count == 0 ? "(none)" : string.Join(", ", parts.ToArray());
+            }
+
+            return value.ToString();
+        }
     }
 
     /// <summary>

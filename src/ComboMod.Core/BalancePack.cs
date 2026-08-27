@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using Entities;
+using Environment;
 
 namespace ComboMod
 {
@@ -60,6 +61,13 @@ namespace ComboMod
 
         /// <summary>Global economy values this pack sets, by <see cref="Economy"/> key.</summary>
         public readonly Dictionary<string, float> EconomyValues = new Dictionary<string, float>();
+
+        /// <summary>Milestone requirements, kept as raw key/value pairs for the loader to apply.</summary>
+        public readonly List<KeyValuePair<string, string>> MilestoneValues =
+            new List<KeyValuePair<string, string>>();
+
+        /// <summary>Placement overrides: tag to the tile types it may be built on.</summary>
+        public readonly Dictionary<GameTag, TileType[]> Placement = new Dictionary<GameTag, TileType[]>();
 
         /// <summary>
         /// Anything the parser could not use, with line numbers. Surfaced in the panel rather
@@ -145,8 +153,21 @@ namespace ComboMod
                     continue;
                 }
 
+                if (section.Equals("milestones", StringComparison.OrdinalIgnoreCase))
+                {
+                    pack.ApplyMilestone(key, value, lineNumber);
+                    continue;
+                }
+
                 if (!sectionValid)
                     continue;
+
+                // PlaceOn is a set rather than a scalar, so it cannot go through the knob table.
+                if (key.Equals("PlaceOn", StringComparison.OrdinalIgnoreCase))
+                {
+                    pack.ApplyPlacement(sectionTag, sectionIsItem, value, lineNumber);
+                    continue;
+                }
 
                 Tuner.Knob knob = FindKnobByName(key);
                 if (knob == null)
@@ -182,16 +203,17 @@ namespace ComboMod
             tag = GameTag.None;
             isItem = false;
 
-            // [pack] and [economy] are handled by key, not by tag.
+            // These sections are keyed by setting name rather than by game tag.
             if (section.Equals("pack", StringComparison.OrdinalIgnoreCase)
-                || section.Equals("economy", StringComparison.OrdinalIgnoreCase))
+                || section.Equals("economy", StringComparison.OrdinalIgnoreCase)
+                || section.Equals("milestones", StringComparison.OrdinalIgnoreCase))
                 return false;
 
             int dot = section.IndexOf('.');
             if (dot < 0)
             {
-                Warnings.Add("line " + lineNumber
-                             + ": section must be [pack], [economy], [building.Name] or [item.Name]");
+                Warnings.Add("line " + lineNumber + ": section must be [pack], [economy], "
+                             + "[milestones], [building.Name] or [item.Name]");
                 return false;
             }
 
@@ -256,6 +278,79 @@ namespace ComboMod
             }
 
             EconomyValues[setting.Key] = parsed;
+        }
+
+        private void ApplyMilestone(string key, string value, int lineNumber)
+        {
+            if (key.Equals("scale", StringComparison.OrdinalIgnoreCase))
+            {
+                float scale;
+                if (float.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out scale))
+                    MilestoneValues.Add(new KeyValuePair<string, string>("scale", value));
+                else
+                    Warnings.Add("line " + lineNumber + ": '" + value + "' is not a number");
+                return;
+            }
+
+            GameState.CitySize size;
+            MilestoneTuning.Threshold which;
+            if (!MilestoneTuning.TryParseKey(key, out size, out which))
+            {
+                Warnings.Add("line " + lineNumber + ": '" + key + "' is not a city size "
+                             + "(Hamlet, Village, Metropolis... optionally .base, .rankA or .rankB)");
+                return;
+            }
+
+            int score;
+            if (!int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out score))
+            {
+                Warnings.Add("line " + lineNumber + ": '" + value + "' is not a whole number");
+                return;
+            }
+
+            MilestoneValues.Add(new KeyValuePair<string, string>(key, value));
+        }
+
+        private void ApplyPlacement(GameTag tag, bool isItem, string value, int lineNumber)
+        {
+            if (isItem)
+            {
+                Warnings.Add("line " + lineNumber + ": PlaceOn applies to buildings, not items");
+                return;
+            }
+
+            var types = new List<TileType>();
+            foreach (string part in value.Split(','))
+            {
+                string name = part.Trim();
+                if (name.Length == 0) continue;
+
+                bool ok;
+                TileType type = TileType.None;
+                try
+                {
+                    type = (TileType)Enum.Parse(typeof(TileType), name, ignoreCase: true);
+                    ok = Enum.IsDefined(typeof(TileType), type);
+                }
+                catch { ok = false; }
+
+                if (!ok)
+                {
+                    Warnings.Add("line " + lineNumber + ": '" + name + "' is not a tile type "
+                                 + "(Grass, Sand, Shore, Ocean)");
+                    return;
+                }
+
+                types.Add(type);
+            }
+
+            if (types.Count == 0)
+            {
+                Warnings.Add("line " + lineNumber + ": PlaceOn needs at least one tile type");
+                return;
+            }
+
+            Placement[tag] = types.ToArray();
         }
 
         private static Tuner.Knob FindKnobByName(string name)
