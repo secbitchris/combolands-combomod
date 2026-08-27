@@ -128,11 +128,15 @@ three layers; live editing reaching already-placed buildings; the integrity chec
 unrecognised build (forced by blanking the hash); giving items; slot add and removal; the
 map-load fix; install and uninstall round trip against a byte-identical vanilla folder.
 
-**Verified against the save data, not yet in the running game**: the 0.2.1 plateau/canal fix
-(`MapFixPatches.cs`). The vanilla bug and its signature were confirmed by decompiling the load
-path and diffing a real save (106 plateau tiles in tile data, 2 in `PlateauCoords`); the patch
-builds and is deployed, but no session has loaded a save through it yet. First launch should log
-`Rebuilt N plateau ... sprite(s)` once, then never again.
+**Partially verified**: the 0.2.1 plateau/canal fix (`MapFixPatches.cs`). The vanilla bug and
+its signature were confirmed by decompiling the load path and diffing a real save (106 plateau
+tiles in tile data, 2 in `PlateauCoords`). The dictionary-preservation half **is verified**: a
+repaired save went through a live load→save cycle and kept all 108 coords, where vanilla would
+have kept ~2. The heal half ran once and correctly rebuilt 0 on a complete save; its rebuild
+path (including the anywhere-placement case, predicted 3 tiles on the affected save) was never
+exercised — the run was abandoned before a load with the extended heal deployed. If plateau
+loss ever recurs on a new run, the heal is the diagnostic: a `Rebuilt N plateau ...` warning on
+load means the wipe happened again despite the preservation patch.
 
 **Not verified**: any other machine, any other save shape, competing packs from different authors,
 boards smaller than the 44×27 tested on. Panel *buttons* are largely untested — synthetic clicks
