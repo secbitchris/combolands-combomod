@@ -5,3 +5,6 @@ obj/
 # local deploy artefacts
 *.user
 .vs/
+
+# built Thunderstore archives
+packaging/dist/
